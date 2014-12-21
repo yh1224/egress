@@ -27,3 +27,11 @@
 *.i*86
 *.x86_64
 *.hex
+
+*.tab.c
+*.tab.h
+*.yy.c
+/libeg.a
+/eg
+/parse_test
+/html

@@ -1,0 +1,532 @@
+/**
+ * @file
+ * Egress encoder/decoder common functions
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <ctype.h>
+#include <unistd.h>
+#include <net/ethernet.h>
+#include "eg_enc.h"
+
+/**
+ * string to unsigned long
+ *
+ * @param[out] result
+ * @param[in] str
+ *
+ * @retval 0 success
+ * @retval <0 fail
+ */
+static int eg_enc_strtoul(unsigned long *result, char *str)
+{
+    char *endptr;
+    unsigned long num;
+
+    if (!strncmp(str, "0x", 2)) {
+        num = strtoul(str, &endptr, 16); /* hex */
+    } else {
+        num = strtoul(str, &endptr, 10); /* dec */
+    }
+    if (*endptr != '\0') {
+        return -1; /* format error (overflow) */
+    }
+    *result = num;
+    return 0;
+}
+
+/**
+ * encode number (uint32 host byte order)
+ *
+ * @param[out] result result
+ * @param[in] val encode string
+ * @param[in] min minimum value
+ * @param[in] max maximum value
+ *
+ * @retval >=0 encoded length
+ * @retval <0 fail
+ */
+static int eg_enc_encode_num(u_int32_t *result, eg_elem_val_t *val, u_int32_t min, u_int32_t max)
+{
+    unsigned long num;
+
+    if (val == NULL) {
+        num = 0;
+    } else if (val->type == EG_TYPE_NUMBER) {
+        if (eg_enc_strtoul(&num, val->str) < 0) {
+            fprintf(stderr, "number out of range: %s\n", val->str);
+            return -1; /* format error (overflow) */
+        }
+        if (num < min || num > max) {
+            fprintf(stderr, "number out of range: %s\n", val->str);
+            return -1; /* out of range */
+        }
+    } else {
+        fprintf(stderr, "number out of range: %s\n", val->str);
+        return -1; /* type mismatch */
+    }
+
+    *result = (u_int32_t)num;
+    return sizeof(*result);
+}
+
+/**
+ * encode number (uint32 with range)
+ *
+ * @param[out] result result
+ * @param[in] val encode string
+ * @param[in] min minimum number
+ * @param[in] max maximum number
+ *
+ * @retval >=0 encoded length
+ * @retval <0 fail
+ */
+int eg_enc_encode_uint(u_int32_t *result, eg_elem_val_t *val, u_int32_t min, u_int32_t max)
+{
+    u_int32_t num;
+    int ret;
+
+    ret = eg_enc_encode_num(&num, val, min, max);
+    if (ret < 0) {
+        return ret;
+    }
+    *result = htobe32(num);
+    return sizeof(*result);
+}
+
+/**
+ * encode number (uint32)
+ *
+ * @param[out] result buffer to write
+ * @param[in] val encode string
+ *
+ * @retval >=0 encoded length
+ * @retval <0 fail
+ */
+int eg_enc_encode_uint32(uint32_t *result, eg_elem_val_t *val)
+{
+    u_int32_t num;
+    int ret;
+
+    ret = eg_enc_encode_num(&num, val, 0, 0xffffffff);
+    if (ret < 0) {
+        return ret;
+    }
+    *result = htobe32(num);
+    return sizeof(*result);
+}
+
+/**
+ * encode number (uint16)
+ *
+ * @param[out] result buffer to write
+ * @param[in] val encode string
+ *
+ * @retval >=0 encoded length
+ * @retval <0 fail
+ */
+int eg_enc_encode_uint16(u_int16_t *result, eg_elem_val_t *val)
+{
+    u_int32_t num;
+    int ret;
+
+    ret = eg_enc_encode_num(&num, val, 0, 0xffff);
+    if (ret < 0) {
+        return ret;
+    }
+    *result = htobe16((u_int16_t)num);
+    return sizeof(*result);
+}
+
+/**
+ * encode number (uint8)
+ *
+ * @param[out] result buffer to write
+ * @param[in] val encode string
+ *
+ * @retval >=0 encoded length
+ * @retval <0 fail
+ */
+int eg_enc_encode_uint8(u_int8_t *result, eg_elem_val_t *val)
+{
+    u_int32_t num;
+    int ret;
+
+    ret = eg_enc_encode_num(&num, val, 0, 0xff);
+    if (ret < 0) {
+        return ret;
+    }
+    *result = (u_int8_t)num;
+    return sizeof(*result);
+}
+
+/**
+ * encode mac address (with range)
+ *
+ * @param[out] result buffer to write
+ * @param[in] val encode string
+ * @param[in] min minimum octets
+ * @param[in] max maximum octets (0:unlimited)
+ *
+ * @retval >=0 encoded length
+ * @retval <0 fail
+ */
+int eg_enc_encode_hex(u_int8_t *result, eg_elem_val_t *val, int min, int max)
+{
+    u_int8_t *presult = result;
+    char *p;
+    int len = 0;
+    u_int8_t c;
+    int start, end;
+    int i;
+
+    if (val->type == EG_TYPE_NUMBER && !strncmp(val->str, "0x", 2)) {
+        p = val->str + 2;
+        len = 0;
+        start = strlen(p) & 1;
+        end = start + strlen(p);
+        for (i = 0; i < min - (end / 2); i++) {
+            *presult++ = 0;
+            len++;
+        }
+        c = 0;
+        for (i = start; i < end; i++) {
+            c <<= 4;
+            if (isdigit(*p)) {
+                c += *p - '0';
+            } else if (*p >= 'a' || *p <= 'f') {
+                c += *p - 'a' + 10;
+            } else if (*p >= 'A' || *p <= 'F') {
+                c += *p - 'A' + 10;
+            }
+            if (i & 1) {
+                if (max && len >= max) {
+                    return -1;  // exceed max
+                }
+                *presult++ = c;
+                len++;
+                c = 0;
+            }
+            p++;
+        }
+    } else {
+        return -1; /* type mismatch */
+    }
+    return len;
+}
+
+/**
+ * encode mac address
+ *
+ * @param[out] result result
+ * @param[in] val encode string
+ *
+ * @retval >=0 encoded length
+ * @retval <0 fail
+ */
+int eg_enc_encode_macaddr(u_int8_t *result, eg_elem_val_t *val)
+{
+    u_int8_t *presult;
+    char *p;
+    u_int8_t c;
+    int ret;
+    int i;
+
+    if (val == NULL) {
+        ;
+    } else if (val->type == EG_TYPE_NUMBER) {
+        ret = eg_enc_encode_hex(result, val, ETH_ALEN, ETH_ALEN);
+        if (ret < 0) {
+            return ret;
+        }
+    } else if (val->type == EG_TYPE_MACADDR) {
+        presult = result;
+        p = val->str;
+        c = 0;
+        for (i = 0; i < ETH_ALEN; ) {
+            if (*p == ':' || *p == '\0') {
+                *presult++ = c;
+                i++;
+                c = 0;
+            } else {
+                c <<= 4;
+                if (isdigit(*p)) {
+                    c += *p - '0';
+                } else if (*p >= 'a' || *p <= 'f') {
+                    c += *p - 'a' + 10;
+                } else if (*p >= 'A' || *p <= 'F') {
+                    c += *p - 'A' + 10;
+                }
+            }
+            p++;
+        }
+    } else {
+        return -1; /* type mismatch */
+    }
+    return ETH_ALEN;
+}
+
+/**
+ * encode IPv4 address
+ *
+ * @param[out] result buffer to write
+ * @param[in] val encode string
+ *
+ * @retval >=0 encoded length
+ * @retval <0 fail
+ */
+int eg_enc_encode_ipv4addr(struct in_addr *result, eg_elem_val_t *val)
+{
+    int ret;
+
+    if (val == NULL) {
+        ;
+    } else if (val->type == EG_TYPE_NUMBER) {
+        ret = eg_enc_encode_hex((u_int8_t *)result, val, sizeof(*result), sizeof(*result));
+        if (ret < 0) {
+            return ret;
+        }
+    } else if (val->type == EG_TYPE_IPV4ADDR) {
+        ret = inet_pton(AF_INET, val->str, result);
+        if (ret != 1) {
+            return ret;
+        }
+    } else {
+        return -1; /* type mismatch */
+    }
+    return sizeof(*result);
+}
+
+/**
+ * encode IPv6 address
+ *
+ * @param[out] result buffer to write
+ * @param[in] val encode string
+ *
+ * @retval >=0 encoded length
+ * @retval <0 fail
+ */
+int eg_enc_encode_ipv6addr(struct in6_addr *result, eg_elem_val_t *val)
+{
+    int ret;
+
+    if (val == NULL) {
+        ;
+    } else if (val->type == EG_TYPE_NUMBER) {
+        ret = eg_enc_encode_hex((u_int8_t *)result, val, sizeof(*result), sizeof(*result));
+        if (ret < 0) {
+            return ret;
+        }
+    } else if (val->type == EG_TYPE_IPV6ADDR) {
+        ret = inet_pton(AF_INET6, val->str, result);
+        if (ret != 1) {
+            return ret;
+        }
+    } else {
+        return -1; /* type mismatch */
+    }
+    return sizeof(*result);
+}
+
+/**
+ * get number (uint32 host byte order)
+ *
+ * @param[out] result number
+ * @param[in] val encode string
+ * @param[in] encname number definition
+ *
+ * @retval 0 success
+ * @retval <0 fail
+ */
+static int eg_enc_encode_name(u_int32_t *result, eg_elem_val_t *val, eg_enc_name_t *encname)
+{
+    eg_enc_name_t *p;
+
+    for (p = encname; p->name != NULL; p++) {
+        if (!strcasecmp(p->name, val->str)) {
+            *result = p->number;
+            return 0;
+        }
+    }
+    return -1;
+}
+
+/**
+ * encode name (uint32)
+ *
+ * @param[out] result buffer to write
+ * @param[in] val encode string
+ * @param[in] encname number definition
+ *
+ * @retval >=0 encoded length
+ * @retval <0 fail
+ */
+int eg_enc_encode_name_uint32(u_int32_t *result, eg_elem_val_t *val, eg_enc_name_t *encname)
+{
+    u_int32_t number;
+    int ret;
+
+    ret = eg_enc_encode_name(&number, val, encname);
+    if (ret < 0) {
+        return ret;
+    }
+    *result = htobe32(number);
+    return sizeof(*result);
+}
+
+/**
+ * encode name (uint16)
+ *
+ * @param[out] result buffer to write
+ * @param[in] val encode string
+ * @param[in] encname number definition
+ *
+ * @retval >=0 encoded length
+ * @retval <0 fail
+ */
+int eg_enc_encode_name_uint16(u_int16_t *result, eg_elem_val_t *val, eg_enc_name_t *encname)
+{
+    u_int32_t number;
+    int ret;
+
+    ret = eg_enc_encode_name(&number, val, encname);
+    if (ret < 0) {
+        return ret;
+    }
+    *result = htobe16((u_int16_t)number);
+    return sizeof(*result);
+}
+
+/**
+ * encode name (uint8)
+ *
+ * @param[out] result buffer to write
+ * @param[in] val encode string
+ * @param[in] encname number definition
+ *
+ * @retval >=0 encoded length
+ * @retval <0 fail
+ */
+int eg_enc_encode_name_uint8(u_int8_t *result, eg_elem_val_t *val, eg_enc_name_t *encname)
+{
+    u_int32_t number;
+    int ret;
+
+    ret = eg_enc_encode_name(&number, val, encname);
+    if (ret < 0) {
+        return ret;
+    }
+    *result = (u_int8_t)number;
+    return sizeof(*result);
+}
+
+/**
+ * get flags value (uint32 host byte order)
+ *
+ * @param[out] result flags value
+ * @param[in] val encode string
+ * @param[in] encflags flags definition
+ *
+ * @retval >=0 encoded length
+ * @retval <0 fail
+ */
+static int eg_enc_encode_flags(u_int32_t *result, eg_elem_val_t *val, eg_enc_flags_t *encflags)
+{
+    static char * const delim = ",";
+    eg_enc_flags_t *p;
+    char *namebuf, *pname, *saveptr;
+    int ret = sizeof(*result);
+
+    namebuf = malloc(strlen(val->str) + 1);
+    strcpy(namebuf, val->str);
+
+    *result = 0;
+    pname = strtok_r(namebuf, delim, &saveptr);
+    do {
+        for (p = encflags; p->name != NULL; p++) {
+            if (!strcasecmp(p->name, pname)) {
+                *result |= p->flag;
+                break;
+            }
+        }
+        if (p->name == NULL) {
+            fprintf(stderr, "Unknown flag: %s\n", pname);
+            ret = -1;
+            goto end;
+        }
+    } while ((pname = strtok_r(NULL, delim, &saveptr)) != NULL);
+
+end:
+    free(namebuf);
+    return ret;
+}
+
+/**
+ * get flags value (uint32)
+ *
+ * @param[out] result buffer to write
+ * @param[in] val encode string
+ * @param[in] encflags flags definition
+ *
+ * @retval >=0 encoded length
+ * @retval <0 fail
+ */
+int eg_enc_encode_flags_uint32(u_int32_t *result, eg_elem_val_t *val, eg_enc_flags_t *encflags)
+{
+    u_int32_t flags;
+    int ret;
+
+    ret = eg_enc_encode_flags(&flags, val, encflags);
+    if (ret < 0) {
+        return ret;
+    }
+    *result = htobe32(flags);
+    return sizeof(*result);
+}
+
+/**
+ * get flags value (uint16)
+ *
+ * @param[out] result buffer to write
+ * @param[in] val encode string
+ * @param[in] encflags flags definition
+ *
+ * @retval >=0 encoded length
+ * @retval <0 fail
+ */
+int eg_enc_encode_flags_uint16(u_int16_t *result, eg_elem_val_t *val, eg_enc_flags_t *encflags)
+{
+    u_int32_t flags;
+    int ret;
+
+    ret = eg_enc_encode_flags(&flags, val, encflags);
+    if (ret < 0) {
+        return ret;
+    }
+    *result = htobe16((u_int16_t)flags);
+    return sizeof(*result);
+}
+
+/**
+ * get flags value (uint8)
+ *
+ * @param[out] result buffer to write
+ * @param[in] val encode string
+ * @param[in] encflags flags definition
+ *
+ * @retval >=0 encoded length
+ * @retval <0 fail
+ */
+int eg_enc_encode_flags_uint8(u_int8_t *result, eg_elem_val_t *val, eg_enc_flags_t *encflags)
+{
+    u_int32_t flags;
+    int ret;
+
+    ret = eg_enc_encode_flags(&flags, val, encflags);
+    if (ret < 0) {
+        return ret;
+    }
+    *result = (u_int8_t)flags;
+    return sizeof(*result);
+}
