@@ -2,11 +2,11 @@
  * @file
  * Egress encoder/decoder for raw
  */
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
 #include "pkttools/lib.h"
 #include "eg_enc.h"
 

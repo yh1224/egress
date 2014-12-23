@@ -56,9 +56,9 @@ err:
  */
 eg_buffer_t *eg_buffer_resize(eg_buffer_t *buf, int newlen)
 {
+#if 0
     u_int8_t *newptr;
 
-#if 0
     newptr = (u_int8_t *)malloc(newlen);
     if (newptr == NULL) {
         fprintf(stderr, "out of memory.");

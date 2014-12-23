@@ -2,13 +2,14 @@
  * @file
  * Egress encoder/decoder for udp
  */
+#include <sys/types.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
 #define __FAVOR_BSD
+#include <netinet/in.h>
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
 #include <netinet/udp.h>
@@ -171,7 +172,7 @@ eg_buffer_t *eg_enc_encode_udp(eg_elem_t *elems, void *upper)
 
     /* fix UDP length */
     if (autoflags & AUTOFLAG_LENGTH) {
-        udph->uh_ulen = htobe16((u_int16_t)len);
+        udph->uh_ulen = htons((u_int16_t)len);
     }
 
     /* fix UDP checksum */
@@ -187,18 +188,18 @@ eg_buffer_t *eg_enc_encode_udp(eg_elem_t *elems, void *upper)
                 phdr.dst = iph->ip_dst;
                 phdr.protocol = IPPROTO_UDP;
                 phdr.len = htons(len);
-                udph->uh_sum = htobe16(ip_checksum(&phdr, sizeof(phdr)));
-                udph->uh_sum = htobe16(~ip_checksum(udph, len));
+                udph->uh_sum = htons(ip_checksum(&phdr, sizeof(phdr)));
+                udph->uh_sum = htons(~ip_checksum(udph, len));
             } else if (iph->ip_v == 6) {
                 /* IPv6 */
                 struct ipv6_pseudo_header phdr;
                 memset(&phdr, 0, sizeof(phdr));
                 phdr.src = ip6h->ip6_src;
                 phdr.dst = ip6h->ip6_dst;
-                phdr.plen = htobe32(len);
+                phdr.plen = htonl(len);
                 phdr.nxt = IPPROTO_UDP;
-                udph->uh_sum = htobe16(ip_checksum(&phdr, sizeof(phdr)));
-                udph->uh_sum = htobe16(~ip_checksum(udph, len));
+                udph->uh_sum = htons(ip_checksum(&phdr, sizeof(phdr)));
+                udph->uh_sum = htons(~ip_checksum(udph, len));
             }
         }
     }

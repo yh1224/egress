@@ -2,6 +2,8 @@
  * @file
  * Egress encoder/decoder header
  */
+#include <sys/types.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 
 extern int yyparse();

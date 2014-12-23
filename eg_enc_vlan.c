@@ -2,13 +2,13 @@
  * @file
  * Egress encoder/decoder for ether
  */
+#include <sys/types.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>
-#include <sys/types.h>
 #include <net/ethernet.h>
 #include "eg_enc.h"
 
@@ -124,18 +124,18 @@ eg_buffer_t *eg_enc_encode_vlan(eg_elem_t *elems, void *upper)
             break;
         case EG_ENC_VLAN_PCP:
             ret = eg_enc_encode_uint(&num, elem->val, 0, 0x7);
-            *(u_int16_t *)(vh + 2) &= ~htobe16(0x7 << 13);
-            *(u_int16_t *)(vh + 2) |= htobe16((be32toh(num) & 0x7) << 13);
+            *(u_int16_t *)(vh + 2) &= ~htons(0x7 << 13);
+            *(u_int16_t *)(vh + 2) |= htons((ntohl(num) & 0x7) << 13);
             break;
         case EG_ENC_VLAN_CFI:
             ret = eg_enc_encode_uint(&num, elem->val, 0, 1);
-            *(u_int16_t *)(vh + 2) &= ~htobe16(0x1 << 12);
-            *(u_int16_t *)(vh + 2) |= htobe16((be32toh(num) & 0x1) << 12);
+            *(u_int16_t *)(vh + 2) &= ~htons(0x1 << 12);
+            *(u_int16_t *)(vh + 2) |= htons((ntohl(num) & 0x1) << 12);
             break;
         case EG_ENC_VLAN_VID:
             ret = eg_enc_encode_uint(&num, elem->val, 0, 0xfff);
-            *(u_int16_t *)(vh + 2) &= ~htobe16(0xfff);
-            *(u_int16_t *)(vh + 2) |= htobe16(be32toh(num) & 0xfff);
+            *(u_int16_t *)(vh + 2) &= ~htons(0xfff);
+            *(u_int16_t *)(vh + 2) |= htons(ntohl(num) & 0xfff);
             break;
         default:
             fprintf(stderr, "VLAN: Unknown field: %s\n", elem->name);

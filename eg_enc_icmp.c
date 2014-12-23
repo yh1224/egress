@@ -2,12 +2,14 @@
  * @file
  * Egress encoder/decoder for icmp
  */
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
 #define __FAVOR_BSD
+#include <netinet/in.h>
+#include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 #include "eg_enc.h"
 

@@ -2,11 +2,14 @@
  * @file
  * Egress encoder/decoder for arp
  */
+#include <sys/types.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/types.h>
+#include <sys/socket.h>
+#define __FAVOR_BSD
+#include <netinet/in.h>
 #include <netinet/if_ether.h>
 #include "eg_enc.h"
 
@@ -133,11 +136,11 @@ eg_buffer_t *eg_enc_encode_arp(eg_elem_t *elems, void *upper)
     arph = (struct ether_arp *)buf->ptr;
 
     memset(arph, 0, sizeof(*arph));
-    arph->arp_hrd = htobe16(1);
-    arph->arp_pro = htobe16(ETHERTYPE_IP);
-    arph->arp_hln = ETH_ALEN;
+    arph->arp_hrd = htons(1);
+    arph->arp_pro = htons(ETHERTYPE_IP);
+    arph->arp_hln = ETHER_ADDR_LEN;
     arph->arp_pln = 4;
-    arph->arp_op  = htobe16(1);
+    arph->arp_op  = htons(1);
 
     /* encode fields */
     for (elem = elems; elem != NULL; elem = elem->next) {

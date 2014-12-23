@@ -2,9 +2,12 @@
  * @file
  * pcap file format support
  */
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#define __FAVOR_BSD
+#include <netinet/in.h>
 
 /**
  * pcap file header format
@@ -42,7 +45,7 @@ int pcap_file_is_pcap(FILE *fp)
     int len;
 
     len = fread(&magic, 1, 4, fp);
-    if (len == 4 && magic == htobe32(PCAP_FILE_HEADER_MAGIC)) {
+    if (len == 4 && magic == htonl(PCAP_FILE_HEADER_MAGIC)) {
         return 1;
     }
     return 0;

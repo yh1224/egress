@@ -2,12 +2,14 @@
  * @file
  * Egress encoder/decoder for ipv4
  */
+#include <sys/types.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
+#define __FAVOR_BSD
+#include <netinet/in.h>
 #include <netinet/ip.h>
 #include "pkttools/lib.h"
 #include "eg_enc.h"
@@ -349,13 +351,13 @@ eg_buffer_t *eg_enc_encode_ipv4(eg_elem_t *elems, void *upper)
 
     /* fix datagram length */
     if (autoflags & AUTOFLAG_DLEN) {
-        ip4h->ip_len = htobe16(buf->len);
+        ip4h->ip_len = htons(buf->len);
     }
 
     /* fix checksum */
     if (autoflags & AUTOFLAG_CSUM) {
         ip4h->ip_sum = 0;
-        ip4h->ip_sum = htobe16((u_int16_t)~ip_checksum(ip4h, hlen));
+        ip4h->ip_sum = htons((u_int16_t)~ip_checksum(ip4h, hlen));
     }
 
     return buf;
@@ -408,7 +410,7 @@ static eg_enc_encoder_t eg_enc_ipv4opt_field_encoders[] = {
  */
 eg_buffer_t *eg_enc_encode_ipv4opt(eg_elem_t *elems, void *upper)
 {
-    eg_buffer_t *buf, *bufn;
+    eg_buffer_t *buf;
     u_int32_t autoflags = (AUTOFLAG_OPTLEN);  /* auto flags */
     int datalen = 0;
     eg_elem_t *elem;

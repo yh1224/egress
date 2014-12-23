@@ -2,11 +2,13 @@
  * @file
  * Egress encoder/decoder common functions
  */
+#include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <sys/socket.h>
 #include <net/ethernet.h>
 #include "eg_enc.h"
 
@@ -91,7 +93,7 @@ int eg_enc_encode_uint(u_int32_t *result, eg_elem_val_t *val, u_int32_t min, u_i
     if (ret < 0) {
         return ret;
     }
-    *result = htobe32(num);
+    *result = htonl(num);
     return sizeof(*result);
 }
 
@@ -113,7 +115,7 @@ int eg_enc_encode_uint32(uint32_t *result, eg_elem_val_t *val)
     if (ret < 0) {
         return ret;
     }
-    *result = htobe32(num);
+    *result = htonl(num);
     return sizeof(*result);
 }
 
@@ -135,7 +137,7 @@ int eg_enc_encode_uint16(u_int16_t *result, eg_elem_val_t *val)
     if (ret < 0) {
         return ret;
     }
-    *result = htobe16((u_int16_t)num);
+    *result = htons((u_int16_t)num);
     return sizeof(*result);
 }
 
@@ -236,7 +238,7 @@ int eg_enc_encode_macaddr(u_int8_t *result, eg_elem_val_t *val)
     if (val == NULL) {
         ;
     } else if (val->type == EG_TYPE_NUMBER) {
-        ret = eg_enc_encode_hex(result, val, ETH_ALEN, ETH_ALEN);
+        ret = eg_enc_encode_hex(result, val, ETHER_ADDR_LEN, ETHER_ADDR_LEN);
         if (ret < 0) {
             return ret;
         }
@@ -244,7 +246,7 @@ int eg_enc_encode_macaddr(u_int8_t *result, eg_elem_val_t *val)
         presult = result;
         p = val->str;
         c = 0;
-        for (i = 0; i < ETH_ALEN; ) {
+        for (i = 0; i < ETHER_ADDR_LEN; ) {
             if (*p == ':' || *p == '\0') {
                 *presult++ = c;
                 i++;
@@ -264,7 +266,7 @@ int eg_enc_encode_macaddr(u_int8_t *result, eg_elem_val_t *val)
     } else {
         return -1; /* type mismatch */
     }
-    return ETH_ALEN;
+    return ETHER_ADDR_LEN;
 }
 
 /**
@@ -371,7 +373,7 @@ int eg_enc_encode_name_uint32(u_int32_t *result, eg_elem_val_t *val, eg_enc_name
     if (ret < 0) {
         return ret;
     }
-    *result = htobe32(number);
+    *result = htonl(number);
     return sizeof(*result);
 }
 
@@ -394,7 +396,7 @@ int eg_enc_encode_name_uint16(u_int16_t *result, eg_elem_val_t *val, eg_enc_name
     if (ret < 0) {
         return ret;
     }
-    *result = htobe16((u_int16_t)number);
+    *result = htons((u_int16_t)number);
     return sizeof(*result);
 }
 
@@ -481,7 +483,7 @@ int eg_enc_encode_flags_uint32(u_int32_t *result, eg_elem_val_t *val, eg_enc_fla
     if (ret < 0) {
         return ret;
     }
-    *result = htobe32(flags);
+    *result = htonl(flags);
     return sizeof(*result);
 }
 
@@ -504,7 +506,7 @@ int eg_enc_encode_flags_uint16(u_int16_t *result, eg_elem_val_t *val, eg_enc_fla
     if (ret < 0) {
         return ret;
     }
-    *result = htobe16((u_int16_t)flags);
+    *result = htons((u_int16_t)flags);
     return sizeof(*result);
 }
 

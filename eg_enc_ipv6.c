@@ -2,12 +2,14 @@
  * @file
  * Egress encoder/decoder for ipv6
  */
+#include <sys/types.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/types.h>
+#define __FAVOR_BSD
+#include <netinet/in.h>
 #include <netinet/ip6.h>
 #include "pkttools/lib.h"
 #include "eg_enc.h"
@@ -177,13 +179,13 @@ eg_buffer_t *eg_enc_encode_ipv6(eg_elem_t *elems, void *upper)
             break;
         case EG_ENC_IPV6_TC:
             ret = eg_enc_encode_uint(&num, elem->val, 0, 0xff);
-            ip6h->ip6_flow &= ~htobe32(0xff << 20);
-            ip6h->ip6_flow |= htobe32((u_int32_t)(num << 20));
+            ip6h->ip6_flow &= ~htonl(0xff << 20);
+            ip6h->ip6_flow |= htonl((u_int32_t)(num << 20));
             break;
         case EG_ENC_IPV6_FLOWLABEL:
             ret = eg_enc_encode_uint(&num, elem->val, 0, 0xfffff);
-            ip6h->ip6_flow &= ~htobe32(0xfffff);
-            ip6h->ip6_flow |= htobe32((u_int32_t)num);
+            ip6h->ip6_flow &= ~htonl(0xfffff);
+            ip6h->ip6_flow |= htonl((u_int32_t)num);
             break;
         case EG_ENC_IPV6_LENGTH:
             if (eg_enc_val_is_keyword(elem->val, "AUTO")) {
@@ -249,7 +251,7 @@ eg_buffer_t *eg_enc_encode_ipv6(eg_elem_t *elems, void *upper)
 
     /* fix payload length */
     if (autoflags & AUTOFLAG_PLEN) {
-        ip6h->ip6_plen = htobe16(len - hlen);
+        ip6h->ip6_plen = htons(len - hlen);
     }
 
     return buf;

@@ -12,10 +12,10 @@ LIBSRCS += eg_enc.c eg_enc_buffer.c eg_enc_common.c eg_enc_ether.c eg_enc_vlan.c
 LIBOBJS = $(LIBSRCS:%.c=%.o)
 LIB = libeg.a
 
-CC = gcc
-AR = ar
-YACC = bison
-LEX = flex
+CC ?= gcc
+AR ?= ar
+YACC ?= bison
+LEX ?= flex
 
 GFLAGS  = -O -Wall
 GFLAGS += -g
@@ -28,7 +28,7 @@ all : $(TARGETS)
 	$(CC) $(GFLAGS) $(CFLAGS) -c $< -o $@
 
 eg_parse.tab.c eg_parse.tab.h : eg_parse.y
-	$(YACC) -d -l $<
+	$(YACC) -d -l -o eg_parse.tab.c eg_parse.y
 
 eg_parse.yy.c : eg_parse.l eg_parse.tab.h
 	$(LEX) -o $@ eg_parse.l
@@ -37,7 +37,7 @@ $(LIB) : $(LIBOBJS) $(GENOBJS)
 	$(AR) ruc $(LIB) $(LIBOBJS)
 
 $(TARGET_EGRESS) : $(TARGET_EGRESS).o $(OBJS) $(LIB)
-	$(CC) $(GFLAGS) -o $@ $< $(OBJS) $(LDFLAGS)
+	$(CC) $(GFLAGS) -o $@ $(TARGET_EGRESS).o  $(OBJS) $(LDFLAGS)
 
 doc : $(GENSRCS)
 	doxygen

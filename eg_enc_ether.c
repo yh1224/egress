@@ -2,13 +2,13 @@
  * @file
  * Egress encoder/decoder for ether
  */
+#include <sys/types.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>
-#include <sys/types.h>
 #include <net/ethernet.h>
 #include "eg_enc.h"
 
@@ -113,7 +113,7 @@ eg_buffer_t *eg_enc_encode_ether(eg_elem_t *elems, void *upper)
     eh = (struct ether_header *)buf->ptr;
 
     memset(eh, 0, sizeof(*eh));
-    memset(eh->ether_dhost, -1, ETH_ALEN);
+    memset(eh->ether_dhost, -1, ETHER_ADDR_LEN);
 
     /* encode fields */
     for (elem = elems; elem != NULL; elem = elem->next) {
