@@ -12,7 +12,6 @@
 /**
  * create buffer
  *
- * @param[in] name buffer name
  * @param[in] len buffer length
  *
  * @return buffer (NULL: failed)
@@ -50,7 +49,7 @@ err:
  * resize buffer
  *
  * @param[in] buf buffer
- * @param[in] len new length
+ * @param[in] newlen new length
  *
  * @return buffer (NULL: failed)
  */

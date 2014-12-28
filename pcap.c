@@ -43,10 +43,13 @@ int pcap_file_is_pcap(FILE *fp)
 {
     u_int32_t magic;
     int len;
+    int ret = 0;
 
     len = fread(&magic, 1, 4, fp);
-    if (len == 4 && magic == htonl(PCAP_FILE_HEADER_MAGIC)) {
-        return 1;
+    if (len == 4 &&
+        (magic == PCAP_FILE_HEADER_MAGIC || magic == htonl(PCAP_FILE_HEADER_MAGIC))) {
+        ret = 1;
     }
-    return 0;
+    fseek(fp, 0, SEEK_SET);
+    return ret;
 }

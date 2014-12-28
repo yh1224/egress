@@ -28,8 +28,8 @@ enum {
     EG_ENC_IPV4_TTL,
     EG_ENC_IPV4_PROTO,
     EG_ENC_IPV4_CHECKSUM,
-    EG_ENC_IPV4_SRCIP,
-    EG_ENC_IPV4_DSTIP,
+    EG_ENC_IPV4_SRCADDR,
+    EG_ENC_IPV4_DSTADDR,
     EG_ENC_IPV4_OPTION,
 };
 
@@ -40,72 +40,63 @@ static eg_enc_encoder_t eg_enc_ipv4_field_encoders[] = {
     {
         .id = EG_ENC_IPV4_VER,
         .name = "VER",
-        .desc = "version (default: 4)"
+        .desc = "version (default: 4)",
     },
     {
         .id = EG_ENC_IPV4_HLEN,
         .name = "HLEN",
-        .desc = "header length (default: auto)"
+        .desc = "header length (default: auto)",
     },
     {
         .id = EG_ENC_IPV4_TOS,
         .name = "TOS",
-        .desc = "type of service"
+        .desc = "type of service",
     },
     {
         .id = EG_ENC_IPV4_LENGTH,
         .name = "LENGTH",
-        .desc = "length (default: auto)"
+        .desc = "length (default: auto)",
     },
     {
         .id = EG_ENC_IPV4_ID,
         .name = "ID",
-        .desc = "identification"
+        .desc = "identification",
     },
     {
         .id = EG_ENC_IPV4_FLAGS,
         .name = "FLAGS",
-        .desc = "flags"
+        .desc = "flags",
     },
     {
         .id = EG_ENC_IPV4_OFFSET,
         .name = "OFFSET",
-        .desc = "offset"
+        .desc = "offset",
     },
     {
         .id = EG_ENC_IPV4_TTL,
         .name = "TTL",
-        .desc = "time to live"
+        .desc = "time to live",
     },
     {
         .id = EG_ENC_IPV4_PROTO,
         .name = "PROTOCOL",
-        .desc = "protocol (default: auto)"
+        .desc = "protocol (default: auto)",
     },
     {
         .id = EG_ENC_IPV4_CHECKSUM,
         .name = "CHECKSUM",
-        .desc = "checksum (default: auto)"
+        .desc = "checksum (default: auto)",
     },
     {
-        .id = EG_ENC_IPV4_SRCIP,
-        .name = "SRC",
-        .desc = "source address"
+        .id = EG_ENC_IPV4_SRCADDR,
+        .name = "SRCADDR",
+        .desc = "source address",
     },
     {
-        .id = EG_ENC_IPV4_DSTIP,
-        .name = "DSTIP",
-        .desc = "destination address"
+        .id = EG_ENC_IPV4_DSTADDR,
+        .name = "DSTADDR",
+        .desc = "destination address",
     },
-
-    /* alias */
-    { .name = "DLENGTH",            .id = EG_ENC_IPV4_LENGTH,       },
-    { .name = "SRCADDR",            .id = EG_ENC_IPV4_SRCIP,        },
-    { .name = "SRCIP",              .id = EG_ENC_IPV4_SRCIP,        },
-    { .name = "SRCIPV4",            .id = EG_ENC_IPV4_SRCIP,        },
-    { .name = "DSTADDR",            .id = EG_ENC_IPV4_DSTIP,        },
-    { .name = "DSTIP",              .id = EG_ENC_IPV4_DSTIP,        },
-    { .name = "DSTIPV4",            .id = EG_ENC_IPV4_DSTIP,        },
     {}
 };
 
@@ -117,57 +108,84 @@ static eg_enc_encoder_t eg_enc_ipv4_block_encoders[] = {
         .id = EG_ENC_IPV4_OPTION,
         .name = "OPTION",
         .desc = "IPv4 option",
-        .func = eg_enc_encode_ipv4opt,
+        .encode = eg_enc_encode_ipv4opt,
     },
 
     {
         .name = "ICMP",
         .desc = "ICMP",
-        .func = eg_enc_encode_icmp,
+        .encode = eg_enc_encode_icmp,
     },
     {
         .name = "TCP",
         .desc = "TCP",
-        .func = eg_enc_encode_tcp,
+        .encode = eg_enc_encode_tcp,
     },
     {
         .name = "UDP",
         .desc = "UDP",
-        .func = eg_enc_encode_udp,
+        .encode = eg_enc_encode_udp,
     },
     {
         .name = "IPV4",
         .desc = "IPv4",
-        .func = eg_enc_encode_ipv4,
+        .encode = eg_enc_encode_ipv4,
     },
     {
         .name = "IPV6",
         .desc = "IPv6",
-        .func = eg_enc_encode_ipv6,
+        .encode = eg_enc_encode_ipv6,
     },
 
     /* alias */
-    { .name = "IP",                 .func = eg_enc_encode_ipv4,     },
+    {
+        .name = "IP",
+        .encode = eg_enc_encode_ipv4,
+    },
     {}
 };
 
 /**
  * IPv4 protocol definition
  */
-static eg_enc_name_t ipv4protocols[] = {
-    { "ICMP",               IPPROTO_ICMP            },
-    { "TCP",                IPPROTO_TCP             },
-    { "UDP",                IPPROTO_UDP             },
+static eg_enc_vals_t ipv4protocols[] = {
+    {
+        .name = "ICMP",
+        .desc = "ICMP",
+        .val = IPPROTO_ICMP,
+    },
+    {
+        .name = "TCP",
+        .desc = "TCP",
+        .val = IPPROTO_TCP,           
+    },
+    {
+        .name = "UDP",
+        .desc = "UDP",
+        .val = IPPROTO_UDP,            
+    },
     {},
 };
 
 /**
  * IPv4 flags definition
  */
-static eg_enc_flags_t ipv4flags[] = {
-    { "RF",     IP_RF   },
-    { "DF",     IP_DF   },
-    { "MF",     IP_MF   },
+static eg_enc_vals_t ipv4flags[] = {
+    {
+        .name = "RF",
+        .desc = "reserved fragment flag",
+        .val = IP_RF,
+    },
+    {
+        .name = "DF",
+        .desc = "dont fragment flag",
+        .val = IP_DF,
+    },
+    {
+        .name = "MF",
+        .desc = "more fragments flag",
+        .val = IP_MF,
+    },
     {},
 };
 
@@ -284,10 +302,10 @@ eg_buffer_t *eg_enc_encode_ipv4(eg_elem_t *elems, void *upper)
                 ret = eg_enc_encode_uint16(&ip4h->ip_sum, elem->val);
             }
             break;
-        case EG_ENC_IPV4_SRCIP:
+        case EG_ENC_IPV4_SRCADDR:
             ret = eg_enc_encode_ipv4addr(&ip4h->ip_src, elem->val);
             break;
-        case EG_ENC_IPV4_DSTIP:
+        case EG_ENC_IPV4_DSTADDR:
             ret = eg_enc_encode_ipv4addr(&ip4h->ip_dst, elem->val);
             break;
         default:
@@ -307,7 +325,7 @@ eg_buffer_t *eg_enc_encode_ipv4(eg_elem_t *elems, void *upper)
         if (!enc) {
             goto err;
         }
-        bufn = enc->func(elem->elems, ip4h);
+        bufn = enc->encode(elem->elems, ip4h);
         if (bufn == NULL) {
             goto err;
         }
@@ -383,17 +401,17 @@ static eg_enc_encoder_t eg_enc_ipv4opt_field_encoders[] = {
     {
         .id = EG_ENC_IPV4OPT_TYPE,
         .name = "TYPE",
-        .desc = "IPv4 option type"
+        .desc = "IPv4 option type",
     },
     {
         .id = EG_ENC_IPV4OPT_LEN,
         .name = "LENGTH",
-        .desc = "IPv4 option length"
+        .desc = "IPv4 option length",
     },
     {
         .id = EG_ENC_IPV4OPT_DATA,
         .name = "DATA",
-        .desc = "IPv4 option data"
+        .desc = "IPv4 option data",
     },
     {}
 };

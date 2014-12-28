@@ -13,6 +13,45 @@
 #include "eg_enc.h"
 
 /**
+ * print help name definition
+ *
+ * @param[in] encnames number definition
+ */
+static void eg_help_vals(eg_enc_vals_t *vals)
+{
+    eg_enc_vals_t *p;
+    char tmpstr[16];
+    int namelen = 0;
+    int declen = 0;
+    int hexlen = 0;
+
+    /* calc length */
+    for (p = vals; p->name != NULL; p++) {
+        if (namelen < strlen(p->name)) {
+            namelen = strlen(p->name);
+        }
+        sprintf(tmpstr, "%d", p->val);
+        if (declen < strlen(tmpstr)) {
+            declen = strlen(tmpstr);
+        }
+        sprintf(tmpstr, "%x", p->val);
+        if (hexlen < strlen(tmpstr)) {
+            hexlen = strlen(tmpstr);
+        }
+    }
+    if ((hexlen % 2)  == 1) {
+        hexlen++;
+    }
+
+    fprintf(stderr, "name allowed one of the followings:\n");
+    for (p = vals; p->name != NULL; p++) {
+        if (p->desc != NULL) {
+            fprintf(stderr, "  %-*s  %*d(0x%0*x)  %s\n", namelen, p->name, declen, p->val, hexlen, p->val, p->desc);
+        }
+    }
+}
+
+/**
  * string to unsigned long
  *
  * @param[out] result
@@ -336,21 +375,23 @@ int eg_enc_encode_ipv6addr(struct in6_addr *result, eg_elem_val_t *val)
  *
  * @param[out] result number
  * @param[in] val encode string
- * @param[in] encname number definition
+ * @param[in] encnames number definition
  *
  * @retval 0 success
  * @retval <0 fail
  */
-static int eg_enc_encode_name(u_int32_t *result, eg_elem_val_t *val, eg_enc_name_t *encname)
+static int eg_enc_encode_name(u_int32_t *result, eg_elem_val_t *val, eg_enc_vals_t *encnames)
 {
-    eg_enc_name_t *p;
+    eg_enc_vals_t *p;
 
-    for (p = encname; p->name != NULL; p++) {
+    for (p = encnames; p->name != NULL; p++) {
         if (!strcasecmp(p->name, val->str)) {
-            *result = p->number;
+            *result = p->val;
             return 0;
         }
     }
+    fprintf(stderr, "unknown name: %s\n", val->str);
+    eg_help_vals(encnames);
     return -1;
 }
 
@@ -359,17 +400,17 @@ static int eg_enc_encode_name(u_int32_t *result, eg_elem_val_t *val, eg_enc_name
  *
  * @param[out] result buffer to write
  * @param[in] val encode string
- * @param[in] encname number definition
+ * @param[in] encnames number definition
  *
  * @retval >=0 encoded length
  * @retval <0 fail
  */
-int eg_enc_encode_name_uint32(u_int32_t *result, eg_elem_val_t *val, eg_enc_name_t *encname)
+int eg_enc_encode_name_uint32(u_int32_t *result, eg_elem_val_t *val, eg_enc_vals_t *encnames)
 {
     u_int32_t number;
     int ret;
 
-    ret = eg_enc_encode_name(&number, val, encname);
+    ret = eg_enc_encode_name(&number, val, encnames);
     if (ret < 0) {
         return ret;
     }
@@ -382,17 +423,17 @@ int eg_enc_encode_name_uint32(u_int32_t *result, eg_elem_val_t *val, eg_enc_name
  *
  * @param[out] result buffer to write
  * @param[in] val encode string
- * @param[in] encname number definition
+ * @param[in] encnames number definition
  *
  * @retval >=0 encoded length
  * @retval <0 fail
  */
-int eg_enc_encode_name_uint16(u_int16_t *result, eg_elem_val_t *val, eg_enc_name_t *encname)
+int eg_enc_encode_name_uint16(u_int16_t *result, eg_elem_val_t *val, eg_enc_vals_t *encnames)
 {
     u_int32_t number;
     int ret;
 
-    ret = eg_enc_encode_name(&number, val, encname);
+    ret = eg_enc_encode_name(&number, val, encnames);
     if (ret < 0) {
         return ret;
     }
@@ -405,17 +446,17 @@ int eg_enc_encode_name_uint16(u_int16_t *result, eg_elem_val_t *val, eg_enc_name
  *
  * @param[out] result buffer to write
  * @param[in] val encode string
- * @param[in] encname number definition
+ * @param[in] encnames number definition
  *
  * @retval >=0 encoded length
  * @retval <0 fail
  */
-int eg_enc_encode_name_uint8(u_int8_t *result, eg_elem_val_t *val, eg_enc_name_t *encname)
+int eg_enc_encode_name_uint8(u_int8_t *result, eg_elem_val_t *val, eg_enc_vals_t *encnames)
 {
     u_int32_t number;
     int ret;
 
-    ret = eg_enc_encode_name(&number, val, encname);
+    ret = eg_enc_encode_name(&number, val, encnames);
     if (ret < 0) {
         return ret;
     }
@@ -433,10 +474,10 @@ int eg_enc_encode_name_uint8(u_int8_t *result, eg_elem_val_t *val, eg_enc_name_t
  * @retval >=0 encoded length
  * @retval <0 fail
  */
-static int eg_enc_encode_flags(u_int32_t *result, eg_elem_val_t *val, eg_enc_flags_t *encflags)
+static int eg_enc_encode_flags(u_int32_t *result, eg_elem_val_t *val, eg_enc_vals_t *encflags)
 {
     static char * const delim = ",";
-    eg_enc_flags_t *p;
+    eg_enc_vals_t *p;
     char *namebuf, *pname, *saveptr;
     int ret = sizeof(*result);
 
@@ -448,7 +489,7 @@ static int eg_enc_encode_flags(u_int32_t *result, eg_elem_val_t *val, eg_enc_fla
     do {
         for (p = encflags; p->name != NULL; p++) {
             if (!strcasecmp(p->name, pname)) {
-                *result |= p->flag;
+                *result |= p->val;
                 break;
             }
         }
@@ -460,6 +501,8 @@ static int eg_enc_encode_flags(u_int32_t *result, eg_elem_val_t *val, eg_enc_fla
     } while ((pname = strtok_r(NULL, delim, &saveptr)) != NULL);
 
 end:
+    fprintf(stderr, "unknown name: %s\n", pname);
+    eg_help_vals(encflags);
     free(namebuf);
     return ret;
 }
@@ -474,7 +517,7 @@ end:
  * @retval >=0 encoded length
  * @retval <0 fail
  */
-int eg_enc_encode_flags_uint32(u_int32_t *result, eg_elem_val_t *val, eg_enc_flags_t *encflags)
+int eg_enc_encode_flags_uint32(u_int32_t *result, eg_elem_val_t *val, eg_enc_vals_t *encflags)
 {
     u_int32_t flags;
     int ret;
@@ -497,7 +540,7 @@ int eg_enc_encode_flags_uint32(u_int32_t *result, eg_elem_val_t *val, eg_enc_fla
  * @retval >=0 encoded length
  * @retval <0 fail
  */
-int eg_enc_encode_flags_uint16(u_int16_t *result, eg_elem_val_t *val, eg_enc_flags_t *encflags)
+int eg_enc_encode_flags_uint16(u_int16_t *result, eg_elem_val_t *val, eg_enc_vals_t *encflags)
 {
     u_int32_t flags;
     int ret;
@@ -520,7 +563,7 @@ int eg_enc_encode_flags_uint16(u_int16_t *result, eg_elem_val_t *val, eg_enc_fla
  * @retval >=0 encoded length
  * @retval <0 fail
  */
-int eg_enc_encode_flags_uint8(u_int8_t *result, eg_elem_val_t *val, eg_enc_flags_t *encflags)
+int eg_enc_encode_flags_uint8(u_int8_t *result, eg_elem_val_t *val, eg_enc_vals_t *encflags)
 {
     u_int32_t flags;
     int ret;

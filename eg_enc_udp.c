@@ -33,22 +33,22 @@ static eg_enc_encoder_t eg_enc_udp_field_encoders[] = {
     {
         .id = EG_ENC_UDP_SRCPORT,
         .name = "SRCPORT",
-        .desc = "source port"
+        .desc = "source port",
     },
     {
         .id = EG_ENC_UDP_DSTPORT,
         .name = "DSTPORT",
-        .desc = "destination port"
+        .desc = "destination port",
     },
     {
         .id = EG_ENC_UDP_LENGTH,
         .name = "LENGTH",
-        .desc = "length (default: auto)"
+        .desc = "length (default: auto)",
     },
     {
         .id = EG_ENC_UDP_CHECKSUM,
         .name = "CHECKSUM",
-        .desc = "checksum (default: auto)"
+        .desc = "checksum (default: auto)",
     },
     {}
 };
@@ -60,31 +60,9 @@ static eg_enc_encoder_t eg_enc_udp_block_encoders[] = {
     {
         .name = "PAYLOAD",
         .desc = "payload",
-        .func = eg_enc_encode_raw,
+        .encode = eg_enc_encode_raw,
     },
     {}
-};
-
-/**
- * pseudo header for calculate IPv4 UDP checksum
- */
-struct ipv4_pseudo_header {
-    struct in_addr src;
-    struct in_addr dst;
-    u_int8_t zero;
-    u_int8_t protocol;
-    u_int16_t len;
-};
-
-/**
- * pseudo header for calculate IPv6 UDP checksum
- */
-struct ipv6_pseudo_header {
-    struct in6_addr src;
-    struct in6_addr dst;
-    u_int32_t plen;
-    u_int8_t zero[3];
-    u_int8_t nxt;
 };
 
 #define AUTOFLAG_LENGTH (1 << 0)
@@ -102,7 +80,6 @@ eg_buffer_t *eg_enc_encode_udp(eg_elem_t *elems, void *upper)
 {
     eg_buffer_t *buf, *bufn;
     struct udphdr *udph;
-    int len = sizeof(*udph);
     u_int32_t autoflags = (AUTOFLAG_LENGTH | AUTOFLAG_CSUM);   /* auto flags */
     eg_elem_t *elem;
     eg_enc_encoder_t *enc;
@@ -163,7 +140,7 @@ eg_buffer_t *eg_enc_encode_udp(eg_elem_t *elems, void *upper)
         if (!enc) {
             goto err;
         }
-        bufn = enc->func(elem->elems, udph);
+        bufn = enc->encode(elem->elems, udph);
         if (bufn == NULL) {
             goto err;
         }
@@ -172,7 +149,7 @@ eg_buffer_t *eg_enc_encode_udp(eg_elem_t *elems, void *upper)
 
     /* fix UDP length */
     if (autoflags & AUTOFLAG_LENGTH) {
-        udph->uh_ulen = htons((u_int16_t)len);
+        udph->uh_ulen = htons((u_int16_t)buf->len);
     }
 
     /* fix UDP checksum */
@@ -187,19 +164,19 @@ eg_buffer_t *eg_enc_encode_udp(eg_elem_t *elems, void *upper)
                 phdr.src = iph->ip_src;
                 phdr.dst = iph->ip_dst;
                 phdr.protocol = IPPROTO_UDP;
-                phdr.len = htons(len);
+                phdr.len = htons(buf->len);
                 udph->uh_sum = htons(ip_checksum(&phdr, sizeof(phdr)));
-                udph->uh_sum = htons(~ip_checksum(udph, len));
+                udph->uh_sum = htons(~ip_checksum(udph, buf->len));
             } else if (iph->ip_v == 6) {
                 /* IPv6 */
                 struct ipv6_pseudo_header phdr;
                 memset(&phdr, 0, sizeof(phdr));
                 phdr.src = ip6h->ip6_src;
                 phdr.dst = ip6h->ip6_dst;
-                phdr.plen = htonl(len);
+                phdr.plen = htonl(buf->len);
                 phdr.nxt = IPPROTO_UDP;
                 udph->uh_sum = htons(ip_checksum(&phdr, sizeof(phdr)));
-                udph->uh_sum = htons(~ip_checksum(udph, len));
+                udph->uh_sum = htons(~ip_checksum(udph, buf->len));
             }
         }
     }

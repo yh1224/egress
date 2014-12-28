@@ -29,17 +29,17 @@ static eg_enc_encoder_t eg_enc_ether_field_encoders[] = {
     {
         .id = EG_ENC_ETHER_SRCMAC,
         .name = "SRCMAC",
-        .desc = "source address"
+        .desc = "source address",
     },
     {
         .id = EG_ENC_ETHER_DSTMAC,
         .name = "DSTMAC",
-        .desc = "destination address"
+        .desc = "destination address",
     },
     {
         .id = EG_ENC_ETHER_TYPE,
         .name = "TYPE",
-        .desc = "ethernet type (default: auto)"
+        .desc = "ethernet type (default: auto)",
     },
     {}
 };
@@ -52,38 +52,58 @@ static eg_enc_encoder_t eg_enc_ether_block_encoders[] = {
         .id = EG_ENC_ETHER_VLAN,
         .name = "VLAN",
         .desc = "VLAN tag",
-        .func = eg_enc_encode_vlan,
+        .encode = eg_enc_encode_vlan,
     },
 
     {
         .name = "ARP",
         .desc = "ARP",
-        .func = eg_enc_encode_arp,
+        .encode = eg_enc_encode_arp,
     },
     {
         .name = "IPV4",
         .desc = "IPv4",
-        .func = eg_enc_encode_ipv4,
+        .encode = eg_enc_encode_ipv4,
     },
     {
         .name = "IPV6",
         .desc = "IPv6",
-        .func = eg_enc_encode_ipv6,
+        .encode = eg_enc_encode_ipv6,
     },
 
     /* alias */
-    { .name = "IP",         .func = eg_enc_encode_ipv4,             },
+    {
+        .name = "IP",
+        .encode = eg_enc_encode_ipv4,
+    },
     {}
 };
 
 /**
  * ethertype definition
  */
-static eg_enc_name_t ethertypes[] = {
-    { "ARP",    ETHERTYPE_ARP   },
-    { "IPV4",   ETHERTYPE_IP    },
-    {   "IP",   ETHERTYPE_IP    },
-    { "IPV6",   ETHERTYPE_IPV6  },
+static eg_enc_vals_t ethertypes[] = {
+    {
+        .name = "ARP",
+        .desc = "ARP",
+        .val = ETHERTYPE_ARP,
+    },
+    {
+        .name = "IPV4",
+        .desc = "IPv4",
+        .val = ETHERTYPE_IP,
+    },
+    {
+        .name = "IPV6",
+        .desc = "IPv6",
+        .val = ETHERTYPE_IPV6,
+    },
+
+    /* alias */
+    {
+        .name = "IP",
+        .val = ETHERTYPE_IP,
+    },
     {},
 };
 
@@ -161,7 +181,7 @@ eg_buffer_t *eg_enc_encode_ether(eg_elem_t *elems, void *upper)
         if (!enc) {
             goto err;
         }
-        bufn = enc->func(elem->elems, eh);
+        bufn = enc->encode(elem->elems, eh);
         if (bufn == NULL) {
             goto err;
         }

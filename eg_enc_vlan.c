@@ -33,22 +33,22 @@ static eg_enc_encoder_t eg_enc_vlan_field_encoders[] = {
     {
         .id = EG_ENC_VLAN_TPID,
         .name = "TPID",
-        .desc = "Tag Protocol Identifier (default: 0x8100)"
+        .desc = "Tag Protocol Identifier (default: 0x8100)",
     },
     {
         .id = EG_ENC_VLAN_PCP,
         .name = "PCP",
-        .desc = "Protocol Code Point"
+        .desc = "Protocol Code Point",
     },
     {
         .id = EG_ENC_VLAN_CFI,
         .name = "CFI",
-        .desc = "Canonical Format indicator"
+        .desc = "Canonical Format indicator",
     },
     {
         .id = EG_ENC_VLAN_VID,
         .name = "VID",
-        .desc = "VLAN Identifier"
+        .desc = "VLAN Identifier",
     },
     {}
 };
@@ -61,27 +61,30 @@ static eg_enc_encoder_t eg_enc_ether_block_encoders[] = {
         .id = EG_ENC_VLAN_VLAN,
         .name = "VLAN",
         .desc = "VLAN",
-        .func = eg_enc_encode_vlan,
+        .encode = eg_enc_encode_vlan,
     },
 
     {
         .name = "ARP",
         .desc = "ARP",
-        .func = eg_enc_encode_arp,
+        .encode = eg_enc_encode_arp,
     },
     {
         .name = "IPV4",
         .desc = "IPv4",
-        .func = eg_enc_encode_ipv4,
+        .encode = eg_enc_encode_ipv4,
     },
     {
         .name = "IPV6",
         .desc = "IPv6",
-        .func = eg_enc_encode_ipv6,
+        .encode = eg_enc_encode_ipv6,
     },
 
     /* alias */
-    { .name = "IP",         .func = eg_enc_encode_ipv4,             },
+    {
+        .name = "IP",
+        .encode = eg_enc_encode_ipv4,
+    },
     {}
 };
 
@@ -156,7 +159,7 @@ eg_buffer_t *eg_enc_encode_vlan(eg_elem_t *elems, void *upper)
         if (!enc) {
             goto err;
         }
-        bufn = enc->func(elem->elems, vh);
+        bufn = enc->encode(elem->elems, vh);
         if (bufn == NULL) {
             goto err;
         }

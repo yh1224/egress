@@ -62,8 +62,10 @@ int eg_encode_main(int argc, char *argv[])
         exit(EXIT_FAILURE); /* encode failure */
     }
 
-    tv.tv_sec = tv.tv_usec = 0;
-    pkt_pcap_write(stdout, (char *)buf->ptr, buf->len, buf->len, &tv);
+    do {
+        tv.tv_sec = tv.tv_usec = 0;
+        pkt_pcap_write(stdout, (char *)buf->ptr, buf->len, buf->len, &tv);
+    } while ((buf = buf->next) != NULL);
 
     exit(EXIT_SUCCESS);
 }

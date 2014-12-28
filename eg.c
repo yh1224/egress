@@ -23,7 +23,7 @@ static struct eg_command {
     {
         .name = "decode",
         .desc = "convert pcap to text",
-        .func = eg_encode_main
+        .func = eg_decode_main
     },
     {
         .name = "inject",

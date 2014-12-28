@@ -83,9 +83,17 @@ static eg_enc_encoder_t eg_enc_arp_field_encoders[] = {
 /**
  * opcode definition
  */
-static eg_enc_name_t opcodes[] = {
-    { "REQUEST",    1 },
-    { "REPLY",      2 },
+static eg_enc_vals_t opcodes[] = {
+    {
+        .name = "REQUEST",
+        .desc = "ARP Request",
+        .val = 1,
+    },
+    {
+        .name = "REPLY",
+        .desc = "ARP Reply",
+        .val = 2,
+    },
     {},
 };
 

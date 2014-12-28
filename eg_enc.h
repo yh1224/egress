@@ -58,24 +58,17 @@ typedef struct eg_enc_encoder {
     int id;                     /* identification */
     char *name;                 /* element name */
     char *desc;                 /* description */
-    eg_buffer_t *(*func)(struct eg_elem *, void *upper); /* encoder function */
+    eg_buffer_t *(*encode)(struct eg_elem *, void *upper); /* encode function */
 } eg_enc_encoder_t;
 
 /**
  * number definition
  */
-typedef struct eg_enc_number {
+typedef struct eg_enc_vals {
     char *name;                 /* keyword */
-    u_int32_t number;           /* number */
-} eg_enc_name_t;
-
-/**
- * flags definition
- */
-typedef struct eg_enc_flags {
-    char *name;                 /* keyword */
-    u_int32_t flag;             /* flag value */
-} eg_enc_flags_t;
+    char *desc;                 /* description */
+    u_int32_t val;              /* number value */
+} eg_enc_vals_t;
 
 eg_enc_encoder_t *eg_enc_get_encoder(char *name, eg_enc_encoder_t *encoders);
 eg_buffer_t *eg_enc_encode(eg_elem_t *elems);
@@ -90,6 +83,7 @@ eg_buffer_t *eg_enc_encode_ipv6(struct eg_elem *, void *upper);
 eg_buffer_t *eg_enc_encode_icmp(struct eg_elem *, void *upper);
 eg_buffer_t *eg_enc_encode_tcp(struct eg_elem *, void *upper);
 eg_buffer_t *eg_enc_encode_udp(struct eg_elem *, void *upper);
+eg_buffer_t *eg_enc_encode_icmpv6(struct eg_elem *, void *upper);
 eg_buffer_t *eg_enc_encode_raw(struct eg_elem *, void *upper);
 
 /* common field encoder */
@@ -101,12 +95,12 @@ int eg_enc_encode_hex(u_int8_t *result, eg_elem_val_t *val, int min, int max);
 int eg_enc_encode_macaddr(u_int8_t *result, eg_elem_val_t *val);
 int eg_enc_encode_ipv4addr(struct in_addr *result, eg_elem_val_t *val);
 int eg_enc_encode_ipv6addr(struct in6_addr *result, eg_elem_val_t *val);
-int eg_enc_encode_name_uint32(u_int32_t *result, eg_elem_val_t *val, eg_enc_name_t *encname);
-int eg_enc_encode_name_uint16(u_int16_t *result, eg_elem_val_t *val, eg_enc_name_t *encname);
-int eg_enc_encode_name_uint8(u_int8_t *result, eg_elem_val_t *val, eg_enc_name_t *encname);
-int eg_enc_encode_flags_uint32(u_int32_t *result, eg_elem_val_t *val, eg_enc_flags_t *encflags);
-int eg_enc_encode_flags_uint16(u_int16_t *result, eg_elem_val_t *val, eg_enc_flags_t *encflags);
-int eg_enc_encode_flags_uint8(u_int8_t *result, eg_elem_val_t *val, eg_enc_flags_t *encflags);
+int eg_enc_encode_name_uint32(u_int32_t *result, eg_elem_val_t *val, eg_enc_vals_t *encname);
+int eg_enc_encode_name_uint16(u_int16_t *result, eg_elem_val_t *val, eg_enc_vals_t *encname);
+int eg_enc_encode_name_uint8(u_int8_t *result, eg_elem_val_t *val, eg_enc_vals_t *encname);
+int eg_enc_encode_flags_uint32(u_int32_t *result, eg_elem_val_t *val, eg_enc_vals_t *encflags);
+int eg_enc_encode_flags_uint16(u_int16_t *result, eg_elem_val_t *val, eg_enc_vals_t *encflags);
+int eg_enc_encode_flags_uint8(u_int8_t *result, eg_elem_val_t *val, eg_enc_vals_t *encflags);
 
 /* compare shortcut */
 static inline int eg_enc_elem_name_is(eg_elem_t *elem, char *name) {
@@ -122,3 +116,25 @@ eg_buffer_t *eg_buffer_resize(eg_buffer_t *buf, int newlen);
 void eg_buffer_destroy(eg_buffer_t *buf);
 eg_buffer_t *eg_buffer_chain(eg_buffer_t *buf1, eg_buffer_t *buf2);
 eg_buffer_t *eg_buffer_merge(eg_buffer_t *buf1, eg_buffer_t *buf2, int offset);
+
+/**
+ * pseudo header for calculate IPv4 checksum
+ */
+struct ipv4_pseudo_header {
+    struct in_addr src;
+    struct in_addr dst;
+    u_int8_t zero;
+    u_int8_t protocol;
+    u_int16_t len;
+};
+
+/**
+ * pseudo header for calculate IPv6 checksum
+ */
+struct ipv6_pseudo_header {
+    struct in6_addr src;
+    struct in6_addr dst;
+    u_int32_t plen;
+    u_int8_t zero[3];
+    u_int8_t nxt;
+};

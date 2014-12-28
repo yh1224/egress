@@ -24,8 +24,8 @@ enum {
     EG_ENC_IPV6_LENGTH,
     EG_ENC_IPV6_HOPLIMIT,
     EG_ENC_IPV6_NEXTHEADER,
-    EG_ENC_IPV6_SRC,
-    EG_ENC_IPV6_DST,
+    EG_ENC_IPV6_SRCADDR,
+    EG_ENC_IPV6_DSTADDR,
 };
 
 /**
@@ -35,54 +35,44 @@ static eg_enc_encoder_t eg_enc_ipv6_field_encoders[] = {
     {
         .id = EG_ENC_IPV6_VER,
         .name = "VER",
-        .desc = "version (default: 6)"
+        .desc = "version (default: 6)",
     },
     {
         .id = EG_ENC_IPV6_TC,
-        .name = "TC",
-        .desc = "traffic class"
+        .name = "TRAFFICCLASS",
+        .desc = "traffic class",
     },
     {
         .id = EG_ENC_IPV6_FLOWLABEL,
         .name = "FLOWLABEL",
-        .desc = "flow label"
+        .desc = "flow label",
     },
     {
 
         .id = EG_ENC_IPV6_LENGTH,
         .name = "LENGTH",
-        .desc = "length (default: auto)"
+        .desc = "length (default: auto)",
     },
     {
         .id = EG_ENC_IPV6_HOPLIMIT,
         .name = "HOPLIMIT",
-        .desc = "hop limit"
+        .desc = "hop limit",
     },
     {
         .id = EG_ENC_IPV6_NEXTHEADER,
         .name = "NEXTHEADER",
-        .desc = "next header (default: auto)"
+        .desc = "next header (default: auto)",
     },
     {
-        .id = EG_ENC_IPV6_SRC,
-        .name = "SRC",
-        .desc = "source address"
+        .id = EG_ENC_IPV6_SRCADDR,
+        .name = "SRCADDR",
+        .desc = "source address",
     },
     {
-        .id = EG_ENC_IPV6_DST,
-        .name = "DST",
-        .desc = "destination address"
+        .id = EG_ENC_IPV6_DSTADDR,
+        .name = "DSTADDR",
+        .desc = "destination address",
     },
-
-    /* alias */
-    { .name =   "TRAFFICCLASS",     .id = EG_ENC_IPV6_TC,           },
-    { .name =   "PLENGTH",          .id = EG_ENC_IPV6_LENGTH,       },
-    { .name =   "SRCADDR",          .id = EG_ENC_IPV6_SRC,          },
-    { .name =   "SRCIP",            .id = EG_ENC_IPV6_SRC,          },
-    { .name =   "SRCIPV6",          .id = EG_ENC_IPV6_SRC,          },
-    { .name =   "DSTADDR",          .id = EG_ENC_IPV6_DST,          },
-    { .name =   "DSTIP",            .id = EG_ENC_IPV6_DST,          },
-    { .name =   "DSTIPV6",          .id = EG_ENC_IPV6_DST,          },
     {}
 };
 
@@ -91,43 +81,58 @@ static eg_enc_encoder_t eg_enc_ipv6_field_encoders[] = {
  */
 static eg_enc_encoder_t eg_enc_ipv6_block_encoders[] = {
     {
-        .name = "ICMP",
-        .desc = "ICMP",
-        .func = eg_enc_encode_icmp,
-    },
-    {
         .name = "TCP",
         .desc = "TCP",
-        .func = eg_enc_encode_tcp,
+        .encode = eg_enc_encode_tcp,
     },
     {
         .name = "UDP",
         .desc = "UDP",
-        .func = eg_enc_encode_udp,
+        .encode = eg_enc_encode_udp,
     },
     {
         .name = "IPV4",
         .desc = "IPv4",
-        .func = eg_enc_encode_ipv4,
+        .encode = eg_enc_encode_ipv4,
     },
     {
         .name = "IPV6",
         .desc = "IPv6",
-        .func = eg_enc_encode_ipv6,
+        .encode = eg_enc_encode_ipv6,
+    },
+    {
+        .name = "ICMPV6",
+        .desc = "ICMPv6",
+        .encode = eg_enc_encode_icmpv6,
     },
 
     /* alias */
-    { .name = "IP",                 .func = eg_enc_encode_ipv4,     },
+    {
+        .name = "IP",
+        .encode = eg_enc_encode_ipv4,
+    },
     {}
 };
 
 /**
  * IPv6 protocol definition
  */
-static eg_enc_name_t ipv6protocols[] = {
-    { "ICMPV6",             IPPROTO_ICMPV6          },
-    { "TCP",                IPPROTO_TCP             },
-    { "UDP",                IPPROTO_UDP             },
+static eg_enc_vals_t ipv6protocols[] = {
+    {
+        .name = "ICMPV6",
+        .desc = "ICMPv6",
+        .val = IPPROTO_ICMPV6,
+    },
+    {
+        .name = "TCP",
+        .desc = "TCP",
+        .val = IPPROTO_TCP,
+    },
+    {
+        .name = "UDP",
+        .desc = "UDP",
+        .val = IPPROTO_UDP,
+    },
     {},
 };
 
@@ -147,7 +152,6 @@ eg_buffer_t *eg_enc_encode_ipv6(eg_elem_t *elems, void *upper)
     eg_buffer_t *buf, *bufn;
     struct ip6_hdr *ip6h;
     int hlen = sizeof(*ip6h);
-    int len = sizeof(*ip6h);
     u_int32_t num;
     u_int32_t autoflags = (AUTOFLAG_PLEN | AUTOFLAG_NH);    /* auto flags */
     eg_elem_t *elem;
@@ -212,10 +216,10 @@ eg_buffer_t *eg_enc_encode_ipv6(eg_elem_t *elems, void *upper)
                 }
             }
             break;
-        case EG_ENC_IPV6_SRC:
+        case EG_ENC_IPV6_SRCADDR:
             ret = eg_enc_encode_ipv6addr(&ip6h->ip6_src, elem->val);
             break;
-        case EG_ENC_IPV6_DST:
+        case EG_ENC_IPV6_DSTADDR:
             ret = eg_enc_encode_ipv6addr(&ip6h->ip6_dst, elem->val);
             break;
         default:
@@ -235,7 +239,7 @@ eg_buffer_t *eg_enc_encode_ipv6(eg_elem_t *elems, void *upper)
         if (!enc) {
             goto err;
         }
-        bufn = enc->func(elem->elems, ip6h);
+        bufn = enc->encode(elem->elems, ip6h);
         if (bufn == NULL) {
             goto err;
         }
@@ -251,7 +255,7 @@ eg_buffer_t *eg_enc_encode_ipv6(eg_elem_t *elems, void *upper)
 
     /* fix payload length */
     if (autoflags & AUTOFLAG_PLEN) {
-        ip6h->ip6_plen = htons(len - hlen);
+        ip6h->ip6_plen = htons(buf->len - hlen);
     }
 
     return buf;

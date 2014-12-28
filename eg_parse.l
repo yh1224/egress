@@ -35,11 +35,11 @@ HEXDIGIT    [0-9a-fA-F]
     yylval.string = strdup(yytext);
     return IPV6ADDR;
 }
-[0-9a-zA-Z]+ {
+[_0-9a-zA-Z]+ {
     yylval.string = strdup(yytext);
     return KEY;
 }
-[0-9a-zA-Z,]+ {
+[_0-9a-zA-Z,]+ {
     yylval.string = strdup(yytext);
     return KEYWORD;
 }

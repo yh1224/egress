@@ -38,47 +38,47 @@ static eg_enc_encoder_t eg_enc_tcp_field_encoders[] = {
     {
         .id = EG_ENC_TCP_SRCPORT,
         .name = "SRCPORT",
-        .desc = "source port"
+        .desc = "source port",
     },
     {
         .id = EG_ENC_TCP_DSTPORT,
         .name = "DSTPORT",
-        .desc = "destination port"
+        .desc = "destination port",
     },
     {
         .id = EG_ENC_TCP_SEQ,
         .name = "SEQ",
-        .desc = "sequence number"
+        .desc = "sequence number",
     },
     {
         .id = EG_ENC_TCP_ACK,
         .name = "ACK",
-        .desc = "acknowledgement number"
+        .desc = "acknowledgement number",
     },
     {
         .id = EG_ENC_TCP_OFFSET,
         .name = "OFFSET",
-        .desc = "offset (default: auto)"
+        .desc = "offset (default: auto)",
     },
     {
         .id = EG_ENC_TCP_FLAGS,
         .name = "FLAGS",
-        .desc = "flags"
+        .desc = "flags",
     },
     {
         .id = EG_ENC_TCP_WINDOW,
         .name = "WINDOW",
-        .desc = "window"
+        .desc = "window",
     },
     {
         .id = EG_ENC_TCP_CHECKSUM,
         .name = "CHECKSUM",
-        .desc = "checksum (default: auto)"
+        .desc = "checksum (default: auto)",
     },
     {
         .id = EG_ENC_TCP_URP,
         .name = "URP",
-        .desc = "urgent pointer"
+        .desc = "urgent pointer",
     },
     {}
 };
@@ -90,7 +90,7 @@ static eg_enc_encoder_t eg_enc_tcp_block_encoders[] = {
     {
         .name = "PAYLOAD",
         .desc = "payload",
-        .func = eg_enc_encode_raw,
+        .encode = eg_enc_encode_raw,
     },
     {}
 };
@@ -98,36 +98,38 @@ static eg_enc_encoder_t eg_enc_tcp_block_encoders[] = {
 /**
  * TCP flags definition
  */
-static eg_enc_flags_t tcpflags[] = {
-    { "FIN",    TH_FIN  },
-    { "SYN",    TH_SYN  },
-    { "RST",    TH_RST  },
-    { "PUSH",   TH_PUSH },
-    { "ACK",    TH_ACK  },
-    { "URG",    TH_URG  },
+static eg_enc_vals_t tcpflags[] = {
+    {
+        .name = "FIN",
+        .desc = "FIN",
+        .val = TH_FIN,
+    },
+    {
+        .name = "SYN",
+        .desc = "SYN",
+        .val = TH_SYN,
+    },
+    {
+        .name = "RST",
+        .desc = "RST",
+        .val = TH_RST,
+    },
+    {
+        .name = "PUSH",
+        .desc = "PUSH",
+        .val = TH_PUSH,
+    },
+    {
+        .name = "ACK",
+        .desc = "ACK",
+        .val = TH_ACK,
+    },
+    {
+        .name = "URG",
+        .desc = "URG",
+        .val = TH_URG,
+    },
     {},
-};
-
-/**
- * pseudo header for calculate IPv4 TCP checksum
- */
-struct ipv4_pseudo_header {
-    struct in_addr src;
-    struct in_addr dst;
-    u_int8_t zero;
-    u_int8_t protocol;
-    u_int16_t len;
-};
-
-/**
- * pseudo header for calculate IPv6 TCP checksum
- */
-struct ipv6_pseudo_header {
-    struct in6_addr src;
-    struct in6_addr dst;
-    u_int32_t plen;
-    u_int8_t zero[3];
-    u_int8_t nxt;
 };
 
 #define AUTOFLAG_OFFSET (1 << 0)
@@ -146,7 +148,6 @@ eg_buffer_t *eg_enc_encode_tcp(eg_elem_t *elems, void *upper)
     eg_buffer_t *buf, *bufn;
     struct tcphdr *tcph;
     int hlen = sizeof(*tcph);
-    int len = sizeof(*tcph);
     u_int32_t autoflags = (AUTOFLAG_OFFSET | AUTOFLAG_CSUM);    /* auto flags */
     u_int32_t num;
     eg_elem_t *elem;
@@ -230,7 +231,7 @@ eg_buffer_t *eg_enc_encode_tcp(eg_elem_t *elems, void *upper)
         if (!enc) {
             goto err;
         }
-        bufn = enc->func(elem->elems, tcph);
+        bufn = enc->encode(elem->elems, tcph);
         if (bufn == NULL) {
             goto err;
         }
@@ -254,19 +255,19 @@ eg_buffer_t *eg_enc_encode_tcp(eg_elem_t *elems, void *upper)
                 phdr.src = iph->ip_src;
                 phdr.dst = iph->ip_dst;
                 phdr.protocol = IPPROTO_TCP;
-                phdr.len = htons(len);
+                phdr.len = htons(buf->len);
                 tcph->th_sum = htons(ip_checksum(&phdr, sizeof(phdr)));
-                tcph->th_sum = htons(~ip_checksum(tcph, len));
+                tcph->th_sum = htons(~ip_checksum(tcph, buf->len));
             } else if (iph->ip_v == 6) {
                 /* IPv6 */
                 struct ipv6_pseudo_header phdr;
                 memset(&phdr, 0, sizeof(phdr));
                 phdr.src = ip6h->ip6_src;
                 phdr.dst = ip6h->ip6_dst;
-                phdr.plen = htonl(len);
+                phdr.plen = htonl(buf->len);
                 phdr.nxt = IPPROTO_TCP;
                 tcph->th_sum = htons(ip_checksum(&phdr, sizeof(phdr)));
-                tcph->th_sum = htons(~ip_checksum(tcph, len));
+                tcph->th_sum = htons(~ip_checksum(tcph, buf->len));
             }
         }
     }

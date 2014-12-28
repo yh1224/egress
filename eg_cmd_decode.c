@@ -28,7 +28,6 @@ static void print_element(eg_elem_t *elem, char *name, int level)
     eg_elem_t *e;
     int i;
 
-    print "{\n";
     for (e = elem; e; e = e->next) {
         namebuf[0] = '\0';
         for (i = 0; i < level; i++) {
@@ -50,7 +49,6 @@ static void print_element(eg_elem_t *elem, char *name, int level)
             printf("%s\n", namebuf);
         }
     }
-    print "}\n";
 }
 
 /**
@@ -62,9 +60,10 @@ static void print_element(eg_elem_t *elem, char *name, int level)
 int eg_decode_main(int argc, char *argv[])
 {
     char *infile = NULL;
+    int c;
 
-    while ((opt = getopt(argc, argv, "r:h?")) != -1) {
-        switch (opt) {
+    while ((c = getopt(argc, argv, "r:h?")) != -1) {
+        switch (c) {
         case 'r':
             infile = optarg;
             break;

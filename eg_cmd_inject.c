@@ -16,10 +16,9 @@
  */
 static void usage()
 {
-    printf("usage: eg inject [-c] [-r <infile>] -i <device>\n");
+    printf("usage: eg inject [-c] -i <device>\n");
     printf("\n");
     printf("    -c                    auto complete sender MAC address\n");
-    printf("    -r <infile>           input file (commit to read from stdin)\n");
     printf("    -i <device>           interface to inject\n");
 }
 
