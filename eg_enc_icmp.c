@@ -98,68 +98,78 @@ static eg_enc_encoder_t eg_enc_icmp_block_encoders[] = {
 static eg_enc_vals_t icmptypes[] = {
     {
         .name = "ECHOREPLY",
-        .desc = "Echo Reply",
-        .val = ICMP_ECHOREPLY,
+        .desc = "echo reply",
+        .val = ICMP_ECHOREPLY, /* 0 */
     },
     {
-        .name = "DEST_UNREACH",
-        .desc = "Destination Unreachable",
-        .val = ICMP_DEST_UNREACH,
+        .name = "UNREACH",
+        .desc = "destination unreachable",
+        .val = ICMP_UNREACH, /* 3 */
     },
     {
-        .name = "SOURCE_QUENCH",
-        .desc = "Source Quench",
-        .val = ICMP_SOURCE_QUENCH,
+        .name = "SOURCEQUENCH",
+        .desc = "source quench",
+        .val = ICMP_SOURCEQUENCH, /* 4 */
     },
     {
         .name = "REDIRECT",
-        .desc = "Redirect (change route)",
-        .val = ICMP_REDIRECT,
+        .desc = "redirect (change route)",
+        .val = ICMP_REDIRECT, /* 5 */
     },
     {
         .name = "ECHO",
-        .desc = "Echo Request",
-        .val = ICMP_ECHO,
+        .desc = "echo request",
+        .val = ICMP_ECHO, /* 8 */
     },
     {
-        .name = "TIME_EXCEEDED",
-        .desc = "Time Exceeded",
-        .val = ICMP_TIME_EXCEEDED,
+        .name = "ROUTERADVERT",
+        .desc = "router advertisement",
+        .val = ICMP_ROUTERADVERT, /* 9 */
     },
     {
-        .name = "PARAMETERPROB",
-        .desc = "Parameter Problem",
-        .val = ICMP_PARAMETERPROB,
+        .name = "ROUTERSOLICIT",
+        .desc = "router solicitation",
+        .val = ICMP_ROUTERSOLICIT, /* 10 */
     },
     {
-        .name = "TIMESTAMP",
-        .desc = "Timestamp Request",
-        .val = ICMP_TIMESTAMP,
+        .name = "TIMXCEED",
+        .desc = "time exceeded",
+        .val = ICMP_TIMXCEED, /* 11 */
     },
     {
-        .name = "TIMESTAMPREPLY",
-        .desc = "Timestamp Reply",
-        .val = ICMP_TIMESTAMPREPLY,
+        .name = "PARAMPROB",
+        .desc = "parameter problem",
+        .val = ICMP_PARAMPROB, /* 12 */
     },
     {
-        .name = "INFO_REQUEST",
-        .desc = "Information Request",
-        .val = ICMP_INFO_REQUEST,
+        .name = "TSTAMP",
+        .desc = "timestamp request",
+        .val = ICMP_TSTAMP, /* 13 */
     },
     {
-        .name = "INFO_REPLY",
-        .desc = "Information Reply",
-        .val = ICMP_INFO_REPLY,
+        .name = "TSTAMPREPLY",
+        .desc = "timestamp reply",
+        .val = ICMP_TSTAMPREPLY, /* 14 */
     },
     {
-        .name = "ADDRESS",
-        .desc = "Address Mask Request",
-        .val = ICMP_ADDRESS,
+        .name = "IREQ",
+        .desc = "information request",
+        .val = ICMP_IREQ, /* 15 */
     },
     {
-        .name = "ADDRESSREPLY",
-        .desc = "Address Mask Reply",
-        .val = ICMP_ADDRESSREPLY,
+        .name = "IREQREPLY",
+        .desc = "information reply",
+        .val = ICMP_IREQREPLY, /* 16 */
+    },
+    {
+        .name = "MASKREQ",
+        .desc = "address mask request",
+        .val = ICMP_MASKREQ, /* 17 */
+    },
+    {
+        .name = "MASKREPLY",
+        .desc = "address mask reply",
+        .val = ICMP_MASKREPLY, /* 18 */
     },
     {},
 };
@@ -169,118 +179,125 @@ static eg_enc_vals_t icmptypes[] = {
  */
 static eg_enc_vals_t icmpcodes[] = {
     {
-        .name = "NET_UNREACH",
-        .desc = "Network Unreachable",
-        .val = 0,
+        .name = "UNREACH_NET",
+        .desc = "network unreachable",
+        .val = ICMP_UNREACH_NET, /* 0 */
     },
     {
-        .name = "HOST_UNREACH",
-        .desc = "Host Unreachable",
-        .val = 1,
+        .name = "UNREACH_HOST",
+        .desc = "host unreachable",
+        .val = ICMP_UNREACH_HOST, /* 1 */
     },
     {
-        .name = "PROT_UNREACH",
-        .desc = "Protocol Unreachable",
-        .val = 2,
+        .name = "UNREACH_PROTOCOL",
+        .desc = "protocol unreachable",
+        .val = ICMP_UNREACH_PROTOCOL, /* 2 */
     },
     {
-        .name = "PORT_UNREACH",
-        .desc = "Port Unreachable",
-        .val = 3,
+        .name = "UNREACH_PORT",
+        .desc = "port unreachable",
+        .val = ICMP_UNREACH_PORT, /* 3 */
     },
     {
-        .name = "FRAG_NEEDED",
-        .desc = "Fragmentation Needed/DF set",
-        .val = 4,
+        .name = "UNREACH_NEEDFRAG",
+        .desc = "fragmentation needed/DF set",
+        .val = ICMP_UNREACH_NEEDFRAG, /* 4 */
     },
     {
-        .name = "SR_FAILED",
-        .desc = "Source Route failed",
-        .val = 5,
+        .name = "UNREACH_SRCFAIL",
+        .desc = "source route failed",
+        .val = ICMP_UNREACH_SRCFAIL, /* 5 */
     },
     {
-        .name = "NET_UNKNOWN",
-        .desc = "Net Unknown",
-        .val = 6,
+        .name = "UNREACH_NET_UNKNOWN",
+        .desc = "net unknown",
+        .val = ICMP_UNREACH_NET_UNKNOWN, /* 6 */
     },
     {
-        .name = "HOST_UNKNOWN",
-        .desc = "Host Unknwon",
-        .val = 7,
+        .name = "UNREACH_HOST_UNKNOWN",
+        .desc = "host unknwon",
+        .val = ICMP_UNREACH_HOST_UNKNOWN, /* 7 */
     },
     {
-        .name = "HOST_ISOLATED",
-        .desc = "Host Isolated",
-        .val = 8,
+        .name = "UNREACH_ISOLATED",
+        .desc = "src host isolated",
+        .val = ICMP_UNREACH_ISOLATED, /* 8 */
     },
     {
-        .name = "NET_ANO",
-        .desc = "",
-        .val = 9,
+        .name = "UNREACH_NET_PROHIB",
+        .desc = "net denied",
+        .val = ICMP_UNREACH_NET_PROHIB, /* 9 */
     },
     {
-        .name = "NET_ANO",
-        .desc = "",
-        .val = 10,
+        .name = "ICMP_UNREACH_HOST_PROHIB",
+        .desc = "host denied",
+        .val = ICMP_UNREACH_HOST_PROHIB, /* 10 */
     },
     {
-        .name = "NET_UNR_TOS",
-        .desc = "",
-        .val = 11,
+        .name = "UNREACH_TOSNET",
+        .desc = "bad tos for net",
+        .val = ICMP_UNREACH_TOSNET, /* 11 */
     },
     {
-        .name = "HOST_UNR_TOS",
-        .desc = "",
-        .val = 12,
+        .name = "UNREACH_TOSHOST",
+        .desc = "bad tos for host",
+        .val = ICMP_UNREACH_TOSHOST, /* 12 */
     },
     {
-        .name = "PKT_FILTERED",
-        .desc = "Packet filtered",
-        .val = 13,
+        .name = "ICMP_UNREACH_FILTER_PROHIB",
+        .desc = "admin prohibited/packet filtered",
+        .val = ICMP_UNREACH_FILTER_PROHIB, /* 13 */
     },
     {
-        .name = "PREC_VIOLATION",
-        .desc = "Precedence violation",
-        .val = 14,
+        .name = "UNREACH_HOST_PRECEDENCE",
+        .desc = "host precedence violation",
+        .val = ICMP_UNREACH_HOST_PRECEDENCE, /* 14 */
     },
     {
-        .name = "PREC_CUTOFF",
-        .desc = "Precedence cut off",
-        .val = 15,
+        .name = "UNREACH_PRECEDENCE_CUTOFF",
+        .desc = "precedence cut off",
+        .val = ICMP_UNREACH_PRECEDENCE_CUTOFF, /* 15 */
     },
 
     /* Codes for REDIRECT. */
     {
-        .name = "REDIR_NET",
-        .desc = "Redirect Net",
-        .val = 0,
+        .name = "REDIRECT_NET",
+        .desc = "redirect net",
+        .val = ICMP_REDIRECT_NET, /* 0 */
     },
     {
-        .name = "REDIR_HOST",
-        .desc = "Redirect Host",
-        .val = 1,
+        .name = "REDIRECT_HOST",
+        .desc = "redirect host",
+        .val = ICMP_REDIRECT_HOST, /* 1 */
     },
     {
-        .name = "REDIR_NETTOS",
-        .desc = "Redirect Net for TOS",
-        .val = 2,
+        .name = "REDIRECT_TOSNET",
+        .desc = "redirect net for TOS",
+        .val = ICMP_REDIRECT_TOSNET, /* 2 */
     },
     {
-        .name = "REDIR_HOSTTOS",
-        .desc = "Redirect Host for TOS",
-        .val = 3,
+        .name = "REDIRECT_TOSHOST",
+        .desc = "redirect host for TOS",
+        .val = ICMP_REDIRECT_TOSHOST, /* 3 */
     },
 
     /* Codes for TIME_EXCEEDED. */
     {
-        .name = "EXC_TTL",
-        .desc = "TTL count exceeded",
-        .val = 0,
+        .name = "TIMXCEED_INTRANS",
+        .desc = "TTL count exceeded in transit",
+        .val = ICMP_TIMXCEED_INTRANS, /* 0 */
     },
     {
-        .name = "EXC_FRAGTIME",
-        .desc = "Fragment Reass time exceeded",
-        .val = 1,
+        .name = "TIMXCEED_REASS",
+        .desc = "fragment reass time exceeded",
+        .val = ICMP_TIMXCEED_REASS, /* 1 */
+    },
+
+    /* Codes for PARAMPROB. */
+    {
+        .name = "PARAMPROB_OPTABSENT",
+        .desc = "req. opt. absent",
+        .val = ICMP_PARAMPROB_OPTABSENT, /* 1 */
     },
     {},
 };
@@ -344,7 +361,7 @@ err:
 eg_buffer_t *eg_enc_encode_icmp(eg_elem_t *elems, void *upper)
 {
     eg_buffer_t *buf, *bufn;
-    struct icmphdr *icmph;
+    struct icmp *icmph;
     int hlen = 4;
     u_int32_t autoflags = (AUTOFLAG_CSUM);  /* auto flags */
     eg_elem_t *elem;
@@ -356,7 +373,7 @@ eg_buffer_t *eg_enc_encode_icmp(eg_elem_t *elems, void *upper)
     if (buf == NULL) {
         return NULL;
     }
-    icmph = (struct icmphdr *)buf->ptr;
+    icmph = (struct icmp *)buf->ptr;
 
     /* encode fields */
     for (elem = elems; elem != NULL; elem = elem->next) {
@@ -368,16 +385,16 @@ eg_buffer_t *eg_enc_encode_icmp(eg_elem_t *elems, void *upper)
         switch (enc->id) {
         case EG_ENC_ICMP_TYPE:
             if (elem->val->type == EG_TYPE_KEYWORD) {
-                ret = eg_enc_encode_name_uint8(&icmph->type, elem->val, icmptypes);
+                ret = eg_enc_encode_name_uint8(&icmph->icmp_type, elem->val, icmptypes);
             } else {
-                ret = eg_enc_encode_uint8(&icmph->type, elem->val);
+                ret = eg_enc_encode_uint8(&icmph->icmp_type, elem->val);
             }
             break;
         case EG_ENC_ICMP_CODE:
             if (elem->val->type == EG_TYPE_KEYWORD) {
-                ret = eg_enc_encode_name_uint8(&icmph->code, elem->val, icmpcodes);
+                ret = eg_enc_encode_name_uint8(&icmph->icmp_code, elem->val, icmpcodes);
             } else {
-                ret = eg_enc_encode_uint8(&icmph->code, elem->val);
+                ret = eg_enc_encode_uint8(&icmph->icmp_code, elem->val);
             }
             break;
         case EG_ENC_ICMP_CHECKSUM:
@@ -386,7 +403,7 @@ eg_buffer_t *eg_enc_encode_icmp(eg_elem_t *elems, void *upper)
                 ret = 0;
             } else {
                 autoflags &= ~AUTOFLAG_CSUM;
-                ret = eg_enc_encode_uint16(&icmph->checksum, elem->val);
+                ret = eg_enc_encode_uint16(&icmph->icmp_cksum, elem->val);
             }
             break;
         default:
@@ -430,7 +447,7 @@ eg_buffer_t *eg_enc_encode_icmp(eg_elem_t *elems, void *upper)
             struct ip6_hdr *ip6h = (struct ip6_hdr *)upper;
             if (iph->ip_v == 4) {
                 /* IPv4 */
-                icmph->checksum = htons(~ip_checksum(icmph, buf->len));
+                icmph->icmp_cksum = htons(~ip_checksum(icmph, buf->len));
             } else if (iph->ip_v == 6) {
                 /* IPv6 */
                 struct ipv6_pseudo_header phdr;
@@ -439,8 +456,8 @@ eg_buffer_t *eg_enc_encode_icmp(eg_elem_t *elems, void *upper)
                 phdr.dst = ip6h->ip6_dst;
                 phdr.plen = htonl(buf->len);
                 phdr.nxt = IPPROTO_ICMPV6;
-                icmph->checksum = htons(ip_checksum(&phdr, sizeof(phdr)));
-                icmph->checksum = htons(~ip_checksum(icmph, buf->len));
+                icmph->icmp_cksum = htons(ip_checksum(&phdr, sizeof(phdr)));
+                icmph->icmp_cksum = htons(~ip_checksum(icmph, buf->len));
             }
         }
     }
