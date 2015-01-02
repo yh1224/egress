@@ -173,8 +173,6 @@ static eg_enc_vals_t icmpv6codes[] = {
     {},
 };
 
-#define AUTOFLAG_CSUM   (1 << 0)
-
 /**
  * encode ICMPv6
  *
@@ -188,6 +186,7 @@ eg_buffer_t *eg_enc_encode_icmpv6(eg_elem_t *elems, void *upper)
     eg_buffer_t *buf, *bufn;
     struct icmp6_hdr *icmp6h;
     int hlen = 4;
+#define AUTOFLAG_CSUM   (1 << 0)
     u_int32_t autoflags = (AUTOFLAG_CSUM);  /* auto flags */
     eg_elem_t *elem;
     eg_enc_encoder_t *enc;

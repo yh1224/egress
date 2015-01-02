@@ -65,9 +65,6 @@ static eg_enc_encoder_t eg_enc_udp_block_encoders[] = {
     {}
 };
 
-#define AUTOFLAG_LENGTH (1 << 0)
-#define AUTOFLAG_CSUM   (1 << 1)
-
 /**
  * encode UDP
  *
@@ -80,6 +77,8 @@ eg_buffer_t *eg_enc_encode_udp(eg_elem_t *elems, void *upper)
 {
     eg_buffer_t *buf, *bufn;
     struct udphdr *udph;
+#define AUTOFLAG_LENGTH (1 << 0)
+#define AUTOFLAG_CSUM   (1 << 1)
     u_int32_t autoflags = (AUTOFLAG_LENGTH | AUTOFLAG_CSUM);   /* auto flags */
     eg_elem_t *elem;
     eg_enc_encoder_t *enc;

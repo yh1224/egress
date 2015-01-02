@@ -495,14 +495,13 @@ static int eg_enc_encode_flags(u_int32_t *result, eg_elem_val_t *val, eg_enc_val
         }
         if (p->name == NULL) {
             fprintf(stderr, "Unknown flag: %s\n", pname);
+            eg_help_vals(encflags);
             ret = -1;
             goto end;
         }
     } while ((pname = strtok_r(NULL, delim, &saveptr)) != NULL);
 
 end:
-    fprintf(stderr, "unknown name: %s\n", pname);
-    eg_help_vals(encflags);
     free(namebuf);
     return ret;
 }

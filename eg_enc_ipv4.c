@@ -100,6 +100,8 @@ static eg_enc_encoder_t eg_enc_ipv4_field_encoders[] = {
     {}
 };
 
+static eg_buffer_t *eg_enc_encode_ipv4opt(struct eg_elem *, void *upper);
+
 /**
  * block encoders under ipv4
  */
@@ -189,12 +191,6 @@ static eg_enc_vals_t ipv4flags[] = {
     {},
 };
 
-#define AUTOFLAG_HLEN   (1 << 0)
-#define AUTOFLAG_DLEN   (1 << 1)
-#define AUTOFLAG_CSUM   (1 << 2)
-#define AUTOFLAG_PROT   (1 << 3)
-#define AUTOFLAG_PAD    (1 << 4)
-
 /**
  * encode IPv4
  *
@@ -208,6 +204,11 @@ eg_buffer_t *eg_enc_encode_ipv4(eg_elem_t *elems, void *upper)
     eg_buffer_t *buf, *bufn;
     struct ip *ip4h;
     int hlen = sizeof(*ip4h);
+#define AUTOFLAG_HLEN   (1 << 0)
+#define AUTOFLAG_DLEN   (1 << 1)
+#define AUTOFLAG_CSUM   (1 << 2)
+#define AUTOFLAG_PROT   (1 << 3)
+#define AUTOFLAG_PAD    (1 << 4)
     u_int32_t autoflags = (AUTOFLAG_HLEN | AUTOFLAG_DLEN | AUTOFLAG_CSUM | AUTOFLAG_PROT | AUTOFLAG_PAD);  /* auto flags */
     u_int16_t flag;
     u_int32_t num;
@@ -349,7 +350,6 @@ eg_buffer_t *eg_enc_encode_ipv4(eg_elem_t *elems, void *upper)
         }
     }
 
-#if 1
     if (optlen > 0) {
         /* insert IPv4 option padding */
         if (autoflags & AUTOFLAG_PAD) {
@@ -360,7 +360,6 @@ eg_buffer_t *eg_enc_encode_ipv4(eg_elem_t *elems, void *upper)
         }
         hlen += optlen;
     }
-#endif
 
     /* fix header length */
     if (autoflags & AUTOFLAG_HLEN) {
@@ -416,7 +415,70 @@ static eg_enc_encoder_t eg_enc_ipv4opt_field_encoders[] = {
     {}
 };
 
-#define AUTOFLAG_OPTLEN (1 << 8)
+/**
+ * block encoder for ipv4 option
+ */
+static eg_enc_encoder_t eg_enc_ipv4opt_block_encoders[] = {
+    {
+        .id = EG_ENC_IPV4OPT_DATA,
+        .name = "DATA",
+        .desc = "IPv4 option data",
+        .encode = eg_enc_encode_raw,
+    },
+    {}
+};
+
+/**
+ * ipv4 option type definition
+ */
+static eg_enc_vals_t ipv4opttypes[] = {
+    {
+        .name = "EOL",
+        .desc = "end of options",
+        .val = IPOPT_EOL, /* 0 */
+    },
+    {
+        .name = "NOP",
+        .desc = "no-op",
+        .val = IPOPT_NOP, /* 1 */
+    },
+    {
+        .name = "RR",
+        .desc = "record packet route",
+        .val = IPOPT_RR, /* 7 */
+    },
+    {
+        .name = "TS",
+        .desc = "timestamp",
+        .val = IPOPT_TS, /* 68 */
+    },
+    {
+        .name = "SECURITY",
+        .desc = "provide s,c,h,tcc",
+        .val = IPOPT_SECURITY, /* 130 */
+    },
+    {
+        .name = "LSRR",
+        .desc = "loose source route",
+        .val = IPOPT_LSRR, /* 131 */
+    },
+    {
+        .name = "SATID",
+        .desc = "satnet id",
+        .val = IPOPT_SATID, /* 136 */
+    },
+    {
+        .name = "SSRR",
+        .desc = "strict source route",
+        .val = IPOPT_SSRR, /* 137 */
+    },
+    {
+        .name = "RA",
+        .desc = "router alert",
+        .val = IPOPT_RA, /* 148 */
+    },
+    {},
+};
 
 /**
  * encode IPv4 option
@@ -426,16 +488,17 @@ static eg_enc_encoder_t eg_enc_ipv4opt_field_encoders[] = {
  *
  * @return buffer
  */
-eg_buffer_t *eg_enc_encode_ipv4opt(eg_elem_t *elems, void *upper)
+static eg_buffer_t *eg_enc_encode_ipv4opt(eg_elem_t *elems, void *upper)
 {
-    eg_buffer_t *buf;
+    eg_buffer_t *buf, *bufn;
+#define AUTOFLAG_OPTLEN (1 << 8)
     u_int32_t autoflags = (AUTOFLAG_OPTLEN);  /* auto flags */
     int datalen = 0;
     eg_elem_t *elem;
     eg_enc_encoder_t *enc;
     int ret;
 
-    buf = eg_buffer_create(256);
+    buf = eg_buffer_create(2);
     if (buf == NULL) {
         return NULL;
     }
@@ -449,7 +512,11 @@ eg_buffer_t *eg_enc_encode_ipv4opt(eg_elem_t *elems, void *upper)
         enc = eg_enc_get_encoder(elem->name, eg_enc_ipv4opt_field_encoders);
         switch (enc->id) {
         case EG_ENC_IPV4OPT_TYPE:
-            ret = eg_enc_encode_uint8(buf->ptr, elem->val);
+            if (elem->val->type == EG_TYPE_KEYWORD) {
+                ret = eg_enc_encode_name_uint8(buf->ptr, elem->val, ipv4opttypes);
+            } else {
+                ret = eg_enc_encode_uint8(buf->ptr, elem->val);
+            }
             break;
         case EG_ENC_IPV4OPT_LEN:
             if (eg_enc_val_is_keyword(elem->val, "AUTO")) {
@@ -470,6 +537,23 @@ eg_buffer_t *eg_enc_encode_ipv4opt(eg_elem_t *elems, void *upper)
         if (ret < 0) {
             goto err;
         }
+    }
+
+    /* encode blocks */
+    for (elem = elems; elem != NULL; elem = elem->next) {
+        if (elem->val != NULL) {
+            continue;   /* skip field */
+        }
+        enc = eg_enc_get_encoder(elem->name, eg_enc_ipv4opt_block_encoders);
+        if (!enc) {
+            goto err;
+        }
+        bufn = enc->encode(elem->elems, NULL);
+        if (bufn == NULL) {
+            goto err;
+        }
+        datalen += bufn->len;
+        buf = eg_buffer_merge(buf, bufn, -1);
     }
 
     /* fix option length */

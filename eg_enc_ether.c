@@ -107,8 +107,6 @@ static eg_enc_vals_t ethertypes[] = {
     {},
 };
 
-#define AUTOFLAG_TYPE   (1 << 0)
-
 /**
  * encode ether
  *
@@ -121,6 +119,7 @@ eg_buffer_t *eg_enc_encode_ether(eg_elem_t *elems, void *upper)
 {
     eg_buffer_t *buf, *bufn;
     struct ether_header *eh;
+#define AUTOFLAG_TYPE   (1 << 0)
     u_int32_t autoflags = (AUTOFLAG_TYPE);  /* auto flags */
     eg_elem_t *elem;
     eg_enc_encoder_t *enc;

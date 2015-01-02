@@ -136,9 +136,6 @@ static eg_enc_vals_t ipv6protocols[] = {
     {},
 };
 
-#define AUTOFLAG_PLEN   (1 << 0)
-#define AUTOFLAG_NH     (1 << 1)
-
 /**
  * encode IPv6
  *
@@ -153,6 +150,8 @@ eg_buffer_t *eg_enc_encode_ipv6(eg_elem_t *elems, void *upper)
     struct ip6_hdr *ip6h;
     int hlen = sizeof(*ip6h);
     u_int32_t num;
+#define AUTOFLAG_PLEN   (1 << 0)
+#define AUTOFLAG_NH     (1 << 1)
     u_int32_t autoflags = (AUTOFLAG_PLEN | AUTOFLAG_NH);    /* auto flags */
     eg_elem_t *elem;
     eg_enc_encoder_t *enc;
@@ -229,6 +228,8 @@ eg_buffer_t *eg_enc_encode_ipv6(eg_elem_t *elems, void *upper)
             goto err;
         }
     }
+
+    // TODO: extension eheader
 
     /* encode blocks */
     for (elem = elems; elem != NULL; elem = elem->next) {

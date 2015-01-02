@@ -302,8 +302,6 @@ static eg_enc_vals_t icmpcodes[] = {
     {},
 };
 
-#define AUTOFLAG_CSUM   (1 << 0)
-
 /**
  * encode ICMP echo request/response
  *
@@ -363,6 +361,7 @@ eg_buffer_t *eg_enc_encode_icmp(eg_elem_t *elems, void *upper)
     eg_buffer_t *buf, *bufn;
     struct icmp *icmph;
     int hlen = 4;
+#define AUTOFLAG_CSUM   (1 << 0)
     u_int32_t autoflags = (AUTOFLAG_CSUM);  /* auto flags */
     eg_elem_t *elem;
     eg_enc_encoder_t *enc;

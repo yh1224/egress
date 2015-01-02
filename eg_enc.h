@@ -78,7 +78,6 @@ eg_buffer_t *eg_enc_encode_ether(struct eg_elem *, void *upper);
 eg_buffer_t *eg_enc_encode_vlan(struct eg_elem *, void *upper);
 eg_buffer_t *eg_enc_encode_arp(struct eg_elem *, void *upper);
 eg_buffer_t *eg_enc_encode_ipv4(struct eg_elem *, void *upper);
-eg_buffer_t *eg_enc_encode_ipv4opt(struct eg_elem *, void *upper);
 eg_buffer_t *eg_enc_encode_ipv6(struct eg_elem *, void *upper);
 eg_buffer_t *eg_enc_encode_icmp(struct eg_elem *, void *upper);
 eg_buffer_t *eg_enc_encode_tcp(struct eg_elem *, void *upper);
