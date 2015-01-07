@@ -7,7 +7,7 @@ SRCS = eg_cmd_inject.c eg_cmd_encode.c eg_cmd_decode.c
 OBJS = $(SRCS:%.c=%.o)
 GENSRCS = eg_parse.tab.c eg_parse.tab.h eg_parse.yy.c
 GENOBJS = $(GENSRCS:%.c=%.o)
-LIBSRCS = $(GENSRCS) pcap.c pkttools/rawsock.c pkttools/bpf.c pkttools/pcap.c pkttools/lib.c
+LIBSRCS = $(GENSRCS) pkttools/rawsock.c pkttools/bpf.c pkttools/pcap.c pkttools/lib.c
 LIBSRCS += eg_enc.c eg_enc_buffer.c eg_enc_common.c eg_enc_ether.c eg_enc_vlan.c eg_enc_arp.c eg_enc_icmp.c eg_enc_tcp.c eg_enc_udp.c eg_enc_ipv4.c eg_enc_ipv6.c eg_enc_icmpv6.c eg_enc_raw.c
 LIBOBJS = $(LIBSRCS:%.c=%.o)
 LIB = libeg.a

@@ -22,6 +22,11 @@ static void usage()
     printf("    -i <device>           interface to inject\n");
 }
 
+enum {
+    EG_FILETYPE_PCAP = 0,  /* pcap format (default) */
+    EG_FILETYPE_RAW = 1,   /* raw frame */
+};
+
 /**
  * eg_inject main
  *
@@ -34,6 +39,7 @@ int eg_inject_main(int argc, char *argv[])
     unsigned long sendflags = 0;
     char *ifname = NULL;
     char *infile = NULL;
+    int filetype = EG_FILETYPE_PCAP;
     int c;
     FILE *in;
     int out;
@@ -44,6 +50,17 @@ int eg_inject_main(int argc, char *argv[])
         switch (c) {
         case 'c':
             sendflags |= PKT_SEND_FLAG_COMPLETE;
+            break;
+        case 't':
+            if (strncasecmp("PCAP", optarg, strlen(optarg)) == 0) {
+                filetype = EG_FILETYPE_PCAP;
+            } else if (strncasecmp("RAW", optarg, strlen(optarg)) == 0) {
+                filetype = EG_FILETYPE_RAW;
+            } else {
+                fprintf(stderr, "invalid file type: %s\n", optarg);
+                usage();
+                exit(EXIT_SUCCESS);
+            }
             break;
         case 'r':
             infile = optarg;
@@ -75,7 +92,7 @@ int eg_inject_main(int argc, char *argv[])
     }
 
     out = pkthandler.open_send(ifname, sendflags);
-    if (pcap_file_is_pcap(in)) {
+    if (filetype == EG_FILETYPE_PCAP) {
         while (pkt_pcap_read(in, buf, sizeof(buf), &len, NULL, &tv) > 0) {
             pkthandler.send(out, buf, len);
         }
