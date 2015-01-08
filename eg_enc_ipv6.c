@@ -26,6 +26,7 @@ enum {
     EG_ENC_IPV6_NEXTHEADER,
     EG_ENC_IPV6_SRCADDR,
     EG_ENC_IPV6_DSTADDR,
+    EG_ENC_IPV6_EXTHDR,
 };
 
 /**
@@ -76,10 +77,18 @@ static eg_enc_encoder_t eg_enc_ipv6_field_encoders[] = {
     {}
 };
 
+static eg_buffer_t *eg_enc_encode_ipv6exthdr(eg_elem_t *elems, void *upper);
+
 /**
  * block encoders under ipv6
  */
 static eg_enc_encoder_t eg_enc_ipv6_block_encoders[] = {
+    {
+        .name = "EXTHDR",
+        .desc = "IPv4 extension header",
+        .encode = eg_enc_encode_ipv6exthdr,
+    },
+
     {
         .name = "TCP",
         .desc = "TCP",
@@ -118,20 +127,58 @@ static eg_enc_encoder_t eg_enc_ipv6_block_encoders[] = {
  * IPv6 protocol definition
  */
 static eg_enc_vals_t ipv6protocols[] = {
+    /* extension header type */
     {
-        .name = "ICMPV6",
-        .desc = "ICMPv6",
-        .val = IPPROTO_ICMPV6,
+        .name = "HOPOPTS",
+        .desc = "hop by hop option header",
+        .val = IPPROTO_HOPOPTS, /* 0 */
     },
+    {
+        .name = "ROUTING",
+        .desc = "IPv6 routing header",
+        .val = IPPROTO_ROUTING, /* 43 */
+    },
+    {
+        .name = "FRAGMENT",
+        .desc = "IPv6 fragmentation header",
+        .val = IPPROTO_FRAGMENT, /* 44 */
+    },
+    {
+        .name = "ESP",
+        .desc = "encapsulating security payload",
+        .val = IPPROTO_ESP, /* 50 */
+    },
+    {
+        .name = "AH",
+        .desc = "authentication header",
+        .val = IPPROTO_AH, /* 51 */
+    },
+    {
+        .name = "NONE",
+        .desc = "no next header",
+        .val = IPPROTO_NONE, /* 59 */
+    },
+    {
+        .name = "DSTOPTS",
+        .desc = "destination options",
+        .val = IPPROTO_DSTOPTS, /* 60 */
+    },
+
+    /* upper layer header type*/
     {
         .name = "TCP",
         .desc = "TCP",
-        .val = IPPROTO_TCP,
+        .val = IPPROTO_TCP, /* 6 */
     },
     {
         .name = "UDP",
         .desc = "UDP",
-        .val = IPPROTO_UDP,
+        .val = IPPROTO_UDP, /* 17 */
+    },
+    {
+        .name = "ICMPV6",
+        .desc = "ICMPv6",
+        .val = IPPROTO_ICMPV6, /* 58 */
     },
     {},
 };
@@ -155,6 +202,8 @@ eg_buffer_t *eg_enc_encode_ipv6(eg_elem_t *elems, void *upper)
     u_int32_t autoflags = (AUTOFLAG_PLEN | AUTOFLAG_NH);    /* auto flags */
     eg_elem_t *elem;
     eg_enc_encoder_t *enc;
+    int extlen = 0;
+    int len;
     int ret;
 
     buf = eg_buffer_create(sizeof(*ip6h));
@@ -229,8 +278,6 @@ eg_buffer_t *eg_enc_encode_ipv6(eg_elem_t *elems, void *upper)
         }
     }
 
-    // TODO: extension eheader
-
     /* encode blocks */
     for (elem = elems; elem != NULL; elem = elem->next) {
         if (elem->val != NULL) {
@@ -244,19 +291,161 @@ eg_buffer_t *eg_enc_encode_ipv6(eg_elem_t *elems, void *upper)
         if (bufn == NULL) {
             goto err;
         }
-        /* auto fill next header */
-        if (autoflags & AUTOFLAG_NH) {
-            autoflags &= ~AUTOFLAG_NH;
-            eg_elem_val_t v;
-            v.str = elem->name;
-            eg_enc_encode_name_uint8(&ip6h->ip6_nxt, &v, ipv6protocols);
+        switch (enc->id) {
+        case EG_ENC_IPV6_EXTHDR:
+            /* insert IPv6 extension header */
+            len = bufn->len;
+            buf = eg_buffer_merge(buf, bufn, sizeof(*ip6h) + extlen);
+            extlen += len;
+            break;
+        default:
+            /* auto fill next header */
+            if (autoflags & AUTOFLAG_NH) {
+                autoflags &= ~AUTOFLAG_NH;
+                eg_elem_val_t v;
+                v.str = elem->name;
+                eg_enc_encode_name_uint8(&ip6h->ip6_nxt, &v, ipv6protocols);
+            }
+            buf = eg_buffer_merge(buf, bufn, -1);
+            break;
         }
-        buf = eg_buffer_merge(buf, bufn, -1);
     }
 
     /* fix payload length */
     if (autoflags & AUTOFLAG_PLEN) {
         ip6h->ip6_plen = htons(buf->len - hlen);
+    }
+
+    return buf;
+
+err:
+    eg_buffer_destroy(buf);
+    return NULL;
+}
+
+/**
+ * fields for ipv6 extension header
+ */
+enum {
+    EG_ENC_IPV6EXT_NEXTHEADER = 1,
+    EG_ENC_IPV6EXT_LEN,
+    EG_ENC_IPV6EXT_DATA,
+};
+
+/**
+ * field encoder for ipv6 extension header
+ */
+static eg_enc_encoder_t eg_enc_ipv6ext_field_encoders[] = {
+    {
+        .id = EG_ENC_IPV6EXT_NEXTHEADER,
+        .name = "NEXTHEADER",
+        .desc = "next header",
+    },
+    {
+        .id = EG_ENC_IPV6EXT_LEN,
+        .name = "LENGTH",
+        .desc = "ipv6 extension header length",
+    },
+    {
+        .id = EG_ENC_IPV6EXT_DATA,
+        .name = "DATA",
+        .desc = "ipv6 extension header data",
+    },
+    {}
+};
+
+/**
+ * block encoder for ipv6 extension header
+ */
+static eg_enc_encoder_t eg_enc_ipv6ext_block_encoders[] = {
+    {
+        .id = EG_ENC_IPV6EXT_DATA,
+        .name = "DATA",
+        .desc = "ipv6 extension header data",
+        .encode = eg_enc_encode_raw,
+    },
+    {}
+};
+
+/**
+ * encode IPv6 extension header
+ *
+ * @param[in] elems element list to encode
+ * @param[in] upper upper protocol header
+ *
+ * @return buffer
+ */
+static eg_buffer_t *eg_enc_encode_ipv6exthdr(eg_elem_t *elems, void *upper)
+{
+    eg_buffer_t *buf, *bufn;
+#define AUTOFLAG_EXTLEN (1 << 8)
+    u_int32_t autoflags = (AUTOFLAG_EXTLEN);  /* auto flags */
+    int datalen = 0;
+    eg_elem_t *elem;
+    eg_enc_encoder_t *enc;
+    int ret;
+
+    buf = eg_buffer_create(2);
+    if (buf == NULL) {
+        return NULL;
+    }
+
+    /* encode fields */
+    for (elem = elems; elem != NULL; elem = elem->next) {
+        if (elem->val == NULL) {
+            continue;   /* skip block */
+        }
+        ret = -1;
+        enc = eg_enc_get_encoder(elem->name, eg_enc_ipv6ext_field_encoders);
+        switch (enc->id) {
+        case EG_ENC_IPV6EXT_NEXTHEADER:
+            if (elem->val->type == EG_TYPE_KEYWORD) {
+                ret = eg_enc_encode_name_uint8(buf->ptr, elem->val, ipv6protocols);
+            } else {
+                ret = eg_enc_encode_uint8(buf->ptr, elem->val);
+            }
+            break;
+        case EG_ENC_IPV6EXT_LEN:
+            if (eg_enc_val_is_keyword(elem->val, "AUTO")) {
+                autoflags |= AUTOFLAG_EXTLEN;
+                ret = 0;
+            } else {
+                autoflags &= ~AUTOFLAG_EXTLEN;
+                ret = eg_enc_encode_uint8(buf->ptr + 1, elem->val);
+            }
+            break;
+        case EG_ENC_IPV6EXT_DATA:
+            ret = eg_enc_encode_hex(buf->ptr + 2, elem->val, 0, 254);
+            datalen = ret;
+            break;
+        default:
+            goto err;
+        }
+        if (ret < 0) {
+            goto err;
+        }
+    }
+
+    /* encode blocks */
+    for (elem = elems; elem != NULL; elem = elem->next) {
+        if (elem->val != NULL) {
+            continue;   /* skip field */
+        }
+        enc = eg_enc_get_encoder(elem->name, eg_enc_ipv6ext_block_encoders);
+        if (!enc) {
+            goto err;
+        }
+        bufn = enc->encode(elem->elems, NULL);
+        if (bufn == NULL) {
+            goto err;
+        }
+        datalen += bufn->len;
+        buf = eg_buffer_merge(buf, bufn, -1);
+    }
+
+    /* fix option length */
+    if (autoflags & AUTOFLAG_EXTLEN) {
+        *(buf->ptr + 1) = 2 + datalen; /* type + len + data */
     }
 
     return buf;

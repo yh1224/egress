@@ -66,47 +66,72 @@ static eg_enc_vals_t icmpv6types[] = {
     {
         .name = "DST_UNREACH",
         .desc = "Destination Unreachable",
-        .val = ICMP6_DST_UNREACH,
+        .val = ICMP6_DST_UNREACH, /* 1 */
     },
     {
         .name = "PACKET_TOO_BIG",
         .desc = "Packet Too Big",
-        .val = ICMP6_PACKET_TOO_BIG,
+        .val = ICMP6_PACKET_TOO_BIG, /* 2*/
     },
     {
         .name = "TIME_EXCEEDED",
         .desc = "Time Exceeded",
-        .val = ICMP6_TIME_EXCEEDED,
+        .val = ICMP6_TIME_EXCEEDED, /* 3 */
     },
     {
         .name = "PARAM_PROB",
         .desc = "Parameter Problem",
-        .val = ICMP6_PARAM_PROB,
+        .val = ICMP6_PARAM_PROB, /* 4 */
     },
     {
         .name = "ECHO_REQUEST",
         .desc = "Echo Request",
-        .val = ICMP6_ECHO_REQUEST,
+        .val = ICMP6_ECHO_REQUEST, /* 128 */
     },
     {
         .name = "ECHO_REPLY",
         .desc = "Echo Reply",
-        .val = ICMP6_ECHO_REPLY,
+        .val = ICMP6_ECHO_REPLY, /* 129 */
     },
     {
         .name = "MLD_LISTENER_QUERY",
-        .desc = "Multicast Listener Query",
-        .val = MLD_LISTENER_QUERY,
+        .desc = "Listener Query",
+        .val = MLD_LISTENER_QUERY, /* 130 */
     },
     {
         .name = "MLD_LISTENER_REPORT",
-        .desc = "Multicast Listener Report",
-        .val = MLD_LISTENER_REPORT,
+        .desc = "Listener Report",
+        .val = MLD_LISTENER_REPORT, /* 131 */
     },
     {
         .name = "MLD_LISTENER_REDUCTION",
-        .desc = "Multicast Listener Done",
-        .val = MLD_LISTENER_REDUCTION,
+        .desc = "Listener Done",
+        .val = MLD_LISTENER_REDUCTION, /* 132 */
+    },
+    {
+        .name = "ND_ROUTER_SOLICIT",
+        .desc = "Router Solicit",
+        .val = ND_ROUTER_SOLICIT, /* 133 */
+    },
+    {
+        .name = "ND_ROUTER_ADVERT",
+        .desc = "Router Advertisement",
+        .val = ND_ROUTER_ADVERT, /* 134 */
+    },
+    {
+        .name = "ND_NEIGHBOR_SOLICIT",
+        .desc = "Neighbor Solicit",
+        .val = ND_NEIGHBOR_SOLICIT, /* 135 */
+    },
+    {
+        .name = "ND_NEIGHBOR_ADVERT",
+        .desc = "Neighbor Advertisement",
+        .val = ND_NEIGHBOR_ADVERT, /* 136 */
+    },
+    {
+        .name = "ND_REDIRECT",
+        .desc = "Redirect",
+        .val = ND_REDIRECT, /* 137 */
     },
     {},
 };
