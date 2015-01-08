@@ -69,11 +69,11 @@ static eg_enc_encoder_t eg_enc_udp_block_encoders[] = {
  * encode UDP
  *
  * @param[in] elems element list to encode
- * @param[in] upper upper protocol header
+ * @param[in] lower lower protocol header
  *
  * @return buffer
  */
-eg_buffer_t *eg_enc_encode_udp(eg_elem_t *elems, void *upper)
+eg_buffer_t *eg_enc_encode_udp(eg_elem_t *elems, void *lower)
 {
     eg_buffer_t *buf, *bufn;
     struct udphdr *udph;
@@ -153,9 +153,9 @@ eg_buffer_t *eg_enc_encode_udp(eg_elem_t *elems, void *upper)
 
     /* fix UDP checksum */
     if (autoflags & AUTOFLAG_CSUM) {
-        if (upper) {
-            struct ip *iph = (struct ip *)upper;
-            struct ip6_hdr *ip6h = (struct ip6_hdr *)upper;
+        if (lower) {
+            struct ip *iph = (struct ip *)lower;
+            struct ip6_hdr *ip6h = (struct ip6_hdr *)lower;
             if (iph->ip_v == 4) {
                 /* IPv4 */
                 struct ipv4_pseudo_header phdr;

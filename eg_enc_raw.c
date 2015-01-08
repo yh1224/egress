@@ -69,11 +69,11 @@ static eg_enc_encoder_t eg_enc_raw_field_encoders[] = {
  * encode RAW
  *
  * @param[in] elems element list to encode
- * @param[in] upper upper protocol header
+ * @param[in] lower lower protocol header
  *
  * @return buffer
  */
-eg_buffer_t *eg_enc_encode_raw(eg_elem_t *elems, void *upper)
+eg_buffer_t *eg_enc_encode_raw(eg_elem_t *elems, void *lower)
 {
     eg_buffer_t *buf;
     eg_elem_t *elem;

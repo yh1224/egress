@@ -84,7 +84,7 @@ static eg_enc_encoder_t eg_enc_tcp_field_encoders[] = {
     {}
 };
 
-static eg_buffer_t *eg_enc_encode_tcpopt(struct eg_elem *, void *upper);
+static eg_buffer_t *eg_enc_encode_tcpopt(struct eg_elem *, void *lower);
 
 /**
  * block encoders under tcp
@@ -145,11 +145,11 @@ static eg_enc_vals_t tcpflags[] = {
  * encode TCP
  *
  * @param[in] elems element list to encode
- * @param[in] upper upper protocol header
+ * @param[in] lower lower protocol header
  *
  * @return buffer
  */
-eg_buffer_t *eg_enc_encode_tcp(eg_elem_t *elems, void *upper)
+eg_buffer_t *eg_enc_encode_tcp(eg_elem_t *elems, void *lower)
 {
     eg_buffer_t *buf, *bufn;
     struct tcphdr *tcph;
@@ -275,9 +275,9 @@ eg_buffer_t *eg_enc_encode_tcp(eg_elem_t *elems, void *upper)
 
     /* fix TCP checksum */
     if (autoflags & AUTOFLAG_CSUM) {
-        if (upper) {
-            struct ip *iph = (struct ip *)upper;
-            struct ip6_hdr *ip6h = (struct ip6_hdr *)upper;
+        if (lower) {
+            struct ip *iph = (struct ip *)lower;
+            struct ip6_hdr *ip6h = (struct ip6_hdr *)lower;
             if (iph->ip_v == 4) {
                 /* IPv4 */
                 struct ipv4_pseudo_header phdr;
@@ -399,11 +399,11 @@ static eg_enc_vals_t tcpopttypes[] = {
  * encode TCP option
  *
  * @param[in] elems element list to encode
- * @param[in] upper upper protocol header
+ * @param[in] lower lower protocol header
  *
  * @return buffer
  */
-static eg_buffer_t *eg_enc_encode_tcpopt(eg_elem_t *elems, void *upper)
+static eg_buffer_t *eg_enc_encode_tcpopt(eg_elem_t *elems, void *lower)
 {
     eg_buffer_t *buf, *bufn;
 #define AUTOFLAG_OPTLEN (1 << 8)

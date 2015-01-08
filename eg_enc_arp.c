@@ -125,11 +125,11 @@ static int eg_enc_encode_opcode(u_int16_t *buf, eg_elem_val_t *val)
  * encode ARP
  *
  * @param[in] elems element list to encode
- * @param[in] upper upper protocol header
+ * @param[in] lower lower protocol header
  *
  * @return buffer
  */
-eg_buffer_t *eg_enc_encode_arp(eg_elem_t *elems, void *upper)
+eg_buffer_t *eg_enc_encode_arp(eg_elem_t *elems, void *lower)
 {
     eg_buffer_t *buf;
     struct ether_arp *arph;

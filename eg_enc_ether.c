@@ -111,11 +111,11 @@ static eg_enc_vals_t ethertypes[] = {
  * encode ether
  *
  * @param[in] elems element list to encode
- * @param[in] upper upper protocol header
+ * @param[in] lower lower protocol header
  *
  * @return buffer
  */
-eg_buffer_t *eg_enc_encode_ether(eg_elem_t *elems, void *upper)
+eg_buffer_t *eg_enc_encode_ether(eg_elem_t *elems, void *lower)
 {
     eg_buffer_t *buf, *bufn;
     struct ether_header *eh;

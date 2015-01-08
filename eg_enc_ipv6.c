@@ -77,7 +77,7 @@ static eg_enc_encoder_t eg_enc_ipv6_field_encoders[] = {
     {}
 };
 
-static eg_buffer_t *eg_enc_encode_ipv6exthdr(eg_elem_t *elems, void *upper);
+static eg_buffer_t *eg_enc_encode_ipv6exthdr(eg_elem_t *elems, void *lower);
 
 /**
  * block encoders under ipv6
@@ -164,7 +164,7 @@ static eg_enc_vals_t ipv6protocols[] = {
         .val = IPPROTO_DSTOPTS, /* 60 */
     },
 
-    /* upper layer header type*/
+    /* lower layer header type*/
     {
         .name = "TCP",
         .desc = "TCP",
@@ -187,11 +187,11 @@ static eg_enc_vals_t ipv6protocols[] = {
  * encode IPv6
  *
  * @param[in] elems element list to encode
- * @param[in] upper upper protocol header
+ * @param[in] lower lower protocol header
  *
  * @return buffer
  */
-eg_buffer_t *eg_enc_encode_ipv6(eg_elem_t *elems, void *upper)
+eg_buffer_t *eg_enc_encode_ipv6(eg_elem_t *elems, void *lower)
 {
     eg_buffer_t *buf, *bufn;
     struct ip6_hdr *ip6h;
@@ -371,11 +371,11 @@ static eg_enc_encoder_t eg_enc_ipv6ext_block_encoders[] = {
  * encode IPv6 extension header
  *
  * @param[in] elems element list to encode
- * @param[in] upper upper protocol header
+ * @param[in] lower lower protocol header
  *
  * @return buffer
  */
-static eg_buffer_t *eg_enc_encode_ipv6exthdr(eg_elem_t *elems, void *upper)
+static eg_buffer_t *eg_enc_encode_ipv6exthdr(eg_elem_t *elems, void *lower)
 {
     eg_buffer_t *buf, *bufn;
 #define AUTOFLAG_EXTLEN (1 << 8)

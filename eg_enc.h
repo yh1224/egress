@@ -58,7 +58,7 @@ typedef struct eg_enc_encoder {
     int id;                     /* identification */
     char *name;                 /* element name */
     char *desc;                 /* description */
-    eg_buffer_t *(*encode)(struct eg_elem *, void *upper); /* encode function */
+    eg_buffer_t *(*encode)(struct eg_elem *, void *lower); /* encode function */
 } eg_enc_encoder_t;
 
 /**
@@ -74,16 +74,16 @@ eg_enc_encoder_t *eg_enc_get_encoder(char *name, eg_enc_encoder_t *encoders);
 eg_buffer_t *eg_enc_encode(eg_elem_t *elems);
 
 /* block encoder */
-eg_buffer_t *eg_enc_encode_ether(struct eg_elem *, void *upper);
-eg_buffer_t *eg_enc_encode_vlan(struct eg_elem *, void *upper);
-eg_buffer_t *eg_enc_encode_arp(struct eg_elem *, void *upper);
-eg_buffer_t *eg_enc_encode_ipv4(struct eg_elem *, void *upper);
-eg_buffer_t *eg_enc_encode_ipv6(struct eg_elem *, void *upper);
-eg_buffer_t *eg_enc_encode_icmp(struct eg_elem *, void *upper);
-eg_buffer_t *eg_enc_encode_tcp(struct eg_elem *, void *upper);
-eg_buffer_t *eg_enc_encode_udp(struct eg_elem *, void *upper);
-eg_buffer_t *eg_enc_encode_icmpv6(struct eg_elem *, void *upper);
-eg_buffer_t *eg_enc_encode_raw(struct eg_elem *, void *upper);
+eg_buffer_t *eg_enc_encode_ether(struct eg_elem *, void *lower);
+eg_buffer_t *eg_enc_encode_vlan(struct eg_elem *, void *lower);
+eg_buffer_t *eg_enc_encode_arp(struct eg_elem *, void *lower);
+eg_buffer_t *eg_enc_encode_ipv4(struct eg_elem *, void *lower);
+eg_buffer_t *eg_enc_encode_ipv6(struct eg_elem *, void *lower);
+eg_buffer_t *eg_enc_encode_icmp(struct eg_elem *, void *lower);
+eg_buffer_t *eg_enc_encode_tcp(struct eg_elem *, void *lower);
+eg_buffer_t *eg_enc_encode_udp(struct eg_elem *, void *lower);
+eg_buffer_t *eg_enc_encode_icmpv6(struct eg_elem *, void *lower);
+eg_buffer_t *eg_enc_encode_raw(struct eg_elem *, void *lower);
 
 /* common field encoder */
 int eg_enc_encode_uint(u_int32_t *result, eg_elem_val_t *val, u_int32_t min, u_int32_t max);

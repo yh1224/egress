@@ -100,7 +100,7 @@ static eg_enc_encoder_t eg_enc_ipv4_field_encoders[] = {
     {}
 };
 
-static eg_buffer_t *eg_enc_encode_ipv4opt(struct eg_elem *, void *upper);
+static eg_buffer_t *eg_enc_encode_ipv4opt(struct eg_elem *, void *lower);
 
 /**
  * block encoders under ipv4
@@ -195,11 +195,11 @@ static eg_enc_vals_t ipv4flags[] = {
  * encode IPv4
  *
  * @param[in] elems element list to encode
- * @param[in] upper upper protocol header
+ * @param[in] lower lower protocol header
  *
  * @return buffer
  */
-eg_buffer_t *eg_enc_encode_ipv4(eg_elem_t *elems, void *upper)
+eg_buffer_t *eg_enc_encode_ipv4(eg_elem_t *elems, void *lower)
 {
     eg_buffer_t *buf, *bufn;
     struct ip *ip4h;
@@ -484,11 +484,11 @@ static eg_enc_vals_t ipv4opttypes[] = {
  * encode IPv4 option
  *
  * @param[in] elems element list to encode
- * @param[in] upper upper protocol header
+ * @param[in] lower lower protocol header
  *
  * @return buffer
  */
-static eg_buffer_t *eg_enc_encode_ipv4opt(eg_elem_t *elems, void *upper)
+static eg_buffer_t *eg_enc_encode_ipv4opt(eg_elem_t *elems, void *lower)
 {
     eg_buffer_t *buf, *bufn;
 #define AUTOFLAG_OPTLEN (1 << 8)
