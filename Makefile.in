@@ -13,14 +13,15 @@ LIB = libeg.a
 PKTTOOLSDIR = pkttools
 LIBPKT = $(PKTTOOLSDIR)/libpkt.a
 
-CC = gcc
+CC = @CC@
 AR = ar
 YACC = bison
 LEX = flex
+DEFS = @DEFS@
 
 GFLAGS  = -O -Wall
 GFLAGS += -g
-CFLAGS  =
+CFLAGS  = $(DEFS)
 LDFLAGS = -L. -leg -L$(PKTTOOLSDIR) -lpkt
 
 all : $(TARGETS)
@@ -51,4 +52,5 @@ clean :
 	rm -f $(TARGETS) $(OBJS) $(LIB) $(LIBOBJS) $(GENSRCS) $(GENOBJS)
 	rm -fr html
 	find . -type f -exec chmod -x {} \;
+	chmod +x configure
 

@@ -28,6 +28,7 @@
 *.x86_64
 *.hex
 
+Makefile
 *.tab.c
 *.tab.h
 *.yy.c
@@ -35,3 +36,6 @@
 /eg
 /parse_test
 /html
+configure.scan
+config.status
+*.log
