@@ -3393,6 +3393,26 @@ fi
 done
 test -n "$YACC" || YACC="yacc"
 
+# expand $ac_aux_dir to an absolute path
+am_aux_dir=`cd $ac_aux_dir && pwd`
+
+if test x"${MISSING+set}" != xset; then
+  case $am_aux_dir in
+  *\ * | *\	*)
+    MISSING="\${SHELL} \"$am_aux_dir/missing\"" ;;
+  *)
+    MISSING="\${SHELL} $am_aux_dir/missing" ;;
+  esac
+fi
+# Use eval to expand $SHELL
+if eval "$MISSING --run true"; then
+  am_missing_run="$MISSING --run "
+else
+  am_missing_run=
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \`missing' script is too old or missing" >&5
+$as_echo "$as_me: WARNING: \`missing' script is too old or missing" >&2;}
+fi
+
 
 for ac_prog in flex lex
 do
@@ -3551,49 +3571,14 @@ fi
 rm -f conftest.l $LEX_OUTPUT_ROOT.c
 
 fi
+if test "$LEX" = :; then
+  LEX=${am_missing_run}flex
+fi
 #AC_PROG_INSTALL
 
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-lpkt':
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -lpkt" >&5
-$as_echo_n "checking for main in -lpkt... " >&6; }
-if test "${ac_cv_lib_pkt_main+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lpkt  $LIBS"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-
-int
-main ()
-{
-return main ();
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_pkt_main=yes
-else
-  ac_cv_lib_pkt_main=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_pkt_main" >&5
-$as_echo "$ac_cv_lib_pkt_main" >&6; }
-if test "x$ac_cv_lib_pkt_main" = x""yes; then :
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBPKT 1
-_ACEOF
-
-  LIBS="-lpkt $LIBS"
-
-fi
-
+#AC_CHECK_LIB([pkt], [main])
 
 # Checks for header files.
 ac_ext=c

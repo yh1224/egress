@@ -2,6 +2,9 @@
  * @file
  * Egress encoder/decoder for icmp
  */
+#if defined(HAVE_CONFIG_H)
+#include "config.h"
+#endif
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -144,56 +147,56 @@ static eg_enc_vals_t icmpv6codes[] = {
     {
         .name = "DST_UNREACH_NOROUTE",
         .desc = "no route to destination",
-        .val = ICMP6_DST_UNREACH_NOROUTE,
+        .val = ICMP6_DST_UNREACH_NOROUTE, /* 0 */
     },
     {
         .name = "DST_UNREACH_ADMIN",
         .desc = "communication with destination administratively prohibited",
-        .val = ICMP6_DST_UNREACH_ADMIN,
+        .val = ICMP6_DST_UNREACH_ADMIN, /* 1 */
     },
     {
         .name = "DST_UNREACH_BEYONDSCOPE",
         .desc = "beyond scope of source address",
-        .val = ICMP6_DST_UNREACH_BEYONDSCOPE,
+        .val = ICMP6_DST_UNREACH_BEYONDSCOPE, /* 2 */
     },
     {
         .name = "DST_UNREACH_ADDR",
         .desc = "address unreachable",
-        .val = ICMP6_DST_UNREACH_ADDR,
+        .val = ICMP6_DST_UNREACH_ADDR, /* 3 */
     },
     {
         .name = "DST_UNREACH_NOPORT",
         .desc = "bad port",
-        .val = ICMP6_DST_UNREACH_NOPORT,
+        .val = ICMP6_DST_UNREACH_NOPORT, /* 4 */
     },
 
     /* Codes for TIME_EXCEEDED. */
     {
         .name = "TIME_EXCEED_TRANSIT",
         .desc = "Hop Limit == 0 in transit",
-        .val = ICMP6_TIME_EXCEED_TRANSIT,
+        .val = ICMP6_TIME_EXCEED_TRANSIT, /* 0 */
     },
     {
         .name = "TIME_EXCEED_REASSEMBLY",
         .desc = "Reassembly time out",
-        .val = ICMP6_TIME_EXCEED_REASSEMBLY,
+        .val = ICMP6_TIME_EXCEED_REASSEMBLY, /* 1 */
     },
 
     /* Codes for PARAM_PROB. */
     {
         .name = "PARAMPROB_HEADER",
         .desc = "erroneous header field",
-        .val = ICMP6_PARAMPROB_HEADER,
+        .val = ICMP6_PARAMPROB_HEADER, /* 0 */
     },
     {
         .name = "PARAMPROB_NEXTHEADER",
         .desc = "unrecognized Next Header",
-        .val = ICMP6_PARAMPROB_NEXTHEADER,
+        .val = ICMP6_PARAMPROB_NEXTHEADER, /* 1 */
     },
     {
         .name = "PARAMPROB_OPTION",
         .desc = "unrecognized IPv6 option",
-        .val = ICMP6_PARAMPROB_OPTION,
+        .val = ICMP6_PARAMPROB_OPTION, /* 2 */
     },
     {},
 };

@@ -10,12 +10,12 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_YACC
-AC_PROG_LEX
+AM_PROG_LEX
 #AC_PROG_INSTALL
 
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-lpkt':
-AC_CHECK_LIB([pkt], [main])
+#AC_CHECK_LIB([pkt], [main])
 
 # Checks for header files.
 AC_FUNC_ALLOCA

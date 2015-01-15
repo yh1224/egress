@@ -2,6 +2,9 @@
  * @file
  * Egress encoder/decoder for icmp
  */
+#if defined(HAVE_CONFIG_H)
+#include "config.h"
+#endif
 #include <sys/types.h>
 #include <stdio.h>
 #include <stdlib.h>

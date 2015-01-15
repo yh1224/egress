@@ -2,6 +2,9 @@
  * @file
  * Egress command main for eg encode
  */
+#if defined(HAVE_CONFIG_H)
+#include "config.h"
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,6 +37,7 @@ int eg_encode_main(int argc, char *argv[])
     int opt;
     int ret;
 
+    yyin = NULL;
     while ((opt = getopt(argc, argv, "c:h?")) != -1) {
         switch (opt) {
         case 'c':
@@ -50,16 +54,22 @@ int eg_encode_main(int argc, char *argv[])
     }
 
     if (instr) {
+#if defined(HAVE_FMEMOPEN)
         yyin = fmemopen(instr, strlen(instr), "r");
+#else
+        yyin = tmpfile();
+        fwrite(instr, 1, strlen(instr), yyin);
+        rewind(yyin);
+#endif
     }
     ret = yyparse();
     if (ret) {
-        exit(EXIT_FAILURE); /* parse failure */
+        goto fail; /* parse failure */
     }
 
     buf = eg_enc_encode(get_element_top());
     if (buf == NULL) {
-        exit(EXIT_FAILURE); /* encode failure */
+        goto fail; /* encode failure */
     }
 
     do {
@@ -67,5 +77,12 @@ int eg_encode_main(int argc, char *argv[])
         pkt_pcap_write(stdout, (char *)buf->ptr, buf->len, buf->len, &tv);
     } while ((buf = buf->next) != NULL);
 
+    if (yyin != NULL) {
+        fclose(yyin);
+    }
+
     exit(EXIT_SUCCESS);
+
+fail:
+    exit(EXIT_FAILURE);
 }
