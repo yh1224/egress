@@ -15,8 +15,8 @@ LIBPKT = $(PKTTOOLSDIR)/libpkt.a
 
 CC = @CC@
 AR = ar
-YACC = bison
-LEX = flex
+YACC = @YACC@
+LEX = @LEX@
 DEFS = @DEFS@
 
 GFLAGS  = -O -Wall
