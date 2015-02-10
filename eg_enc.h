@@ -75,6 +75,7 @@ eg_buffer_t *eg_enc_encode(eg_elem_t *elems);
 
 /* block encoder */
 eg_buffer_t *eg_enc_encode_ether(struct eg_elem *, void *lower);
+eg_buffer_t *eg_enc_encode_pppoe_session(eg_elem_t *elems, void *lower);
 eg_buffer_t *eg_enc_encode_vlan(struct eg_elem *, void *lower);
 eg_buffer_t *eg_enc_encode_arp(struct eg_elem *, void *lower);
 eg_buffer_t *eg_enc_encode_ipv4(struct eg_elem *, void *lower);

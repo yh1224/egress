@@ -59,6 +59,11 @@ static eg_enc_encoder_t eg_enc_ether_block_encoders[] = {
     },
 
     {
+        .name = "PPPOE-SESSION",
+        .desc = "PPPoE",
+        .encode = eg_enc_encode_pppoe_session,
+    },
+    {
         .name = "ARP",
         .desc = "ARP",
         .encode = eg_enc_encode_arp,
@@ -87,25 +92,35 @@ static eg_enc_encoder_t eg_enc_ether_block_encoders[] = {
  */
 static eg_enc_vals_t ethertypes[] = {
     {
+        .name = "PPPOE-DISCOVERY",
+        .desc = "PPPoE discovery",
+        .val = 0x8863,
+    },
+    {
+        .name = "PPPOE-SESSION",
+        .desc = "PPPoE session",
+        .val = 0x8864,
+    },
+    {
         .name = "ARP",
         .desc = "ARP",
-        .val = ETHERTYPE_ARP,
+        .val = ETHERTYPE_ARP, /* 0x0806 */
     },
     {
         .name = "IPV4",
         .desc = "IPv4",
-        .val = ETHERTYPE_IP,
+        .val = ETHERTYPE_IP, /* 0x0800 */
     },
     {
         .name = "IPV6",
         .desc = "IPv6",
-        .val = ETHERTYPE_IPV6,
+        .val = ETHERTYPE_IPV6, /* 0x86dd */
     },
 
     /* alias */
     {
         .name = "IP",
-        .val = ETHERTYPE_IP,
+        .val = ETHERTYPE_IP, /* 0x0800 */
     },
     {},
 };
