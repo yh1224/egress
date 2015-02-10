@@ -238,6 +238,9 @@ eg_buffer_t *eg_enc_encode_ipv4(eg_elem_t *elems, void *lower)
         }
         ret = -1;
         enc = eg_enc_get_encoder(elem->name, eg_enc_ipv4_field_encoders);
+        if (!enc) {
+            goto err;
+        }
         switch (enc->id) {
         case EG_ENC_IPV4_VER:
             ret = eg_enc_encode_uint(&num, elem->val, 0, 0x0f);
@@ -513,6 +516,9 @@ static eg_buffer_t *eg_enc_encode_ipv4opt(eg_elem_t *elems, void *lower)
         }
         ret = -1;
         enc = eg_enc_get_encoder(elem->name, eg_enc_ipv4opt_field_encoders);
+        if (!enc) {
+            goto err;
+        }
         switch (enc->id) {
         case EG_ENC_IPV4OPT_TYPE:
             if (elem->val->type == EG_TYPE_KEYWORD) {

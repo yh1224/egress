@@ -100,6 +100,9 @@ eg_buffer_t *eg_enc_encode_udp(eg_elem_t *elems, void *lower)
         }
         ret = -1;
         enc = eg_enc_get_encoder(elem->name, eg_enc_udp_field_encoders);
+        if (!enc) {
+            goto err;
+        }
         switch (enc->id) {
         case EG_ENC_UDP_SRCPORT:
             ret = eg_enc_encode_uint16(&udph->uh_sport, elem->val);

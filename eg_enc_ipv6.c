@@ -226,6 +226,9 @@ eg_buffer_t *eg_enc_encode_ipv6(eg_elem_t *elems, void *lower)
         }
         ret = -1;
         enc = eg_enc_get_encoder(elem->name, eg_enc_ipv6_field_encoders);
+        if (!enc) {
+            goto err;
+        }
         switch (enc->id) {
         case EG_ENC_IPV6_VER:
             ret = eg_enc_encode_uint(&num, elem->val, 0, 0xf);
@@ -400,6 +403,9 @@ static eg_buffer_t *eg_enc_encode_ipv6exthdr(eg_elem_t *elems, void *lower)
         }
         ret = -1;
         enc = eg_enc_get_encoder(elem->name, eg_enc_ipv6ext_field_encoders);
+        if (!enc) {
+            goto err;
+        }
         switch (enc->id) {
         case EG_ENC_IPV6EXT_NEXTHEADER:
             if (elem->val->type == EG_TYPE_KEYWORD) {

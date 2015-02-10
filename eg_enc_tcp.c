@@ -181,6 +181,9 @@ eg_buffer_t *eg_enc_encode_tcp(eg_elem_t *elems, void *lower)
         }
         ret = -1;
         enc = eg_enc_get_encoder(elem->name, eg_enc_tcp_field_encoders);
+        if (!enc) {
+            goto err;
+        }
         switch (enc->id) {
         case EG_ENC_TCP_SRCPORT:
             ret = eg_enc_encode_uint16(&tcph->th_sport, elem->val);
@@ -428,6 +431,9 @@ static eg_buffer_t *eg_enc_encode_tcpopt(eg_elem_t *elems, void *lower)
         }
         ret = -1;
         enc = eg_enc_get_encoder(elem->name, eg_enc_tcpopt_field_encoders);
+        if (!enc) {
+            goto err;
+        }
         switch (enc->id) {
         case EG_ENC_TCPOPT_TYPE:
             if (elem->val->type == EG_TYPE_KEYWORD) {

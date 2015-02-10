@@ -99,6 +99,9 @@ eg_buffer_t *eg_enc_encode_raw(eg_elem_t *elems, void *lower)
         }
         ret = -1;
         enc = eg_enc_get_encoder(elem->name, eg_enc_raw_field_encoders);
+        if (!enc) {
+            goto err;
+        }
         switch (enc->id) {
         case EG_ENC_RAW_UINT32:
             ret = eg_enc_encode_uint32((u_int32_t *)p, elem->val);

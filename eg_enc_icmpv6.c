@@ -233,6 +233,9 @@ eg_buffer_t *eg_enc_encode_icmpv6(eg_elem_t *elems, void *lower)
         }
         ret = -1;
         enc = eg_enc_get_encoder(elem->name, eg_enc_icmpv6_field_encoders);
+        if (!enc) {
+            goto err;
+        }
         switch (enc->id) {
         case EG_ENC_ICMPV6_TYPE:
             if (elem->val->type == EG_TYPE_KEYWORD) {
