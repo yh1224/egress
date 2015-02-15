@@ -231,6 +231,7 @@ int eg_enc_encode_hex(u_int8_t *result, eg_elem_val_t *val, int min, int max)
             p++;
         }
     } else {
+        fprintf(stderr, "invalid hex string: %s\n", val->str);
         return -1; /* type mismatch */
     }
     return len;
@@ -282,6 +283,7 @@ int eg_enc_encode_macaddr(u_int8_t *result, eg_elem_val_t *val)
             p++;
         }
     } else {
+        fprintf(stderr, "invalid mac address: %s\n", val->str);
         return -1; /* type mismatch */
     }
     return ETHER_ADDR_LEN;
@@ -310,9 +312,11 @@ int eg_enc_encode_ipv4addr(struct in_addr *result, eg_elem_val_t *val)
     } else if (val->type == EG_TYPE_IPV4ADDR) {
         ret = inet_pton(AF_INET, val->str, result);
         if (ret != 1) {
+            fprintf(stderr, "invalid IPv4 address: %s\n", val->str);
             return ret;
         }
     } else {
+        fprintf(stderr, "invalid IPv4 address: %s\n", val->str);
         return -1; /* type mismatch */
     }
     return sizeof(*result);
@@ -341,9 +345,11 @@ int eg_enc_encode_ipv6addr(struct in6_addr *result, eg_elem_val_t *val)
     } else if (val->type == EG_TYPE_IPV6ADDR) {
         ret = inet_pton(AF_INET6, val->str, result);
         if (ret != 1) {
+            fprintf(stderr, "invalid IPv6 address: %s\n", val->str);
             return ret;
         }
     } else {
+        fprintf(stderr, "invalid IPv6 address: %s\n", val->str);
         return -1; /* type mismatch */
     }
     return sizeof(*result);
