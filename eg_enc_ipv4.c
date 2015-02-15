@@ -243,7 +243,7 @@ eg_buffer_t *eg_enc_encode_ipv4(eg_elem_t *elems, void *lower)
         }
         switch (enc->id) {
         case EG_ENC_IPV4_VER:
-            ret = eg_enc_encode_uint(&num, elem->val, 0, 0x0f);
+            ret = eg_enc_encode_num(&num, elem->val, 0, 0x0f);
             ip4h->ip_v = num;
             break;
         case EG_ENC_IPV4_HLEN:
@@ -251,7 +251,7 @@ eg_buffer_t *eg_enc_encode_ipv4(eg_elem_t *elems, void *lower)
                 autoflags |= AUTOFLAG_HLEN;
                 ret = 0;
             } else {
-                ret = eg_enc_encode_uint(&num, elem->val, 0, 0x0f);
+                ret = eg_enc_encode_num(&num, elem->val, 0, 0x0f);
                 ip4h->ip_hl = num;
                 autoflags &= ~AUTOFLAG_HLEN;
             }
@@ -275,13 +275,13 @@ eg_buffer_t *eg_enc_encode_ipv4(eg_elem_t *elems, void *lower)
             if (elem->val->type == EG_TYPE_KEYWORD) {
                 ret = eg_enc_encode_flags_uint16(&flag, elem->val, ipv4flags);
             } else {
-                ret = eg_enc_encode_uint(&num, elem->val, 0, 7);
+                ret = eg_enc_encode_num(&num, elem->val, 0, 7);
                 flag = (u_int16_t)num;
             }
             ip4h->ip_off |= flag;
             break;
         case EG_ENC_IPV4_OFFSET:
-            ret = eg_enc_encode_uint(&num, elem->val, 0, 0x1fff);
+            ret = eg_enc_encode_num(&num, elem->val, 0, 0x1fff);
             ip4h->ip_off |= num;
             break;
         case EG_ENC_IPV4_TTL:

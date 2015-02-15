@@ -231,17 +231,17 @@ eg_buffer_t *eg_enc_encode_ipv6(eg_elem_t *elems, void *lower)
         }
         switch (enc->id) {
         case EG_ENC_IPV6_VER:
-            ret = eg_enc_encode_uint(&num, elem->val, 0, 0xf);
+            ret = eg_enc_encode_num(&num, elem->val, 0, 0xf);
             ip6h->ip6_vfc &= ~(0xf << 4);
             ip6h->ip6_vfc = (u_int8_t)(num << 4);
             break;
         case EG_ENC_IPV6_TC:
-            ret = eg_enc_encode_uint(&num, elem->val, 0, 0xff);
+            ret = eg_enc_encode_num(&num, elem->val, 0, 0xff);
             ip6h->ip6_flow &= ~htonl(0xff << 20);
             ip6h->ip6_flow |= htonl((u_int32_t)(num << 20));
             break;
         case EG_ENC_IPV6_FLOWLABEL:
-            ret = eg_enc_encode_uint(&num, elem->val, 0, 0xfffff);
+            ret = eg_enc_encode_num(&num, elem->val, 0, 0xfffff);
             ip6h->ip6_flow &= ~htonl(0xfffff);
             ip6h->ip6_flow |= htonl((u_int32_t)num);
             break;

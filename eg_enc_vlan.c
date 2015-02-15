@@ -132,17 +132,17 @@ eg_buffer_t *eg_enc_encode_vlan(eg_elem_t *elems, void *lower)
             ret = eg_enc_encode_uint16((u_int16_t *)vh, elem->val);
             break;
         case EG_ENC_VLAN_PCP:
-            ret = eg_enc_encode_uint(&num, elem->val, 0, 0x7);
+            ret = eg_enc_encode_num(&num, elem->val, 0, 0x7);
             *(u_int16_t *)(vh + 2) &= ~htons(0x7 << 13);
             *(u_int16_t *)(vh + 2) |= htons((ntohl(num) & 0x7) << 13);
             break;
         case EG_ENC_VLAN_CFI:
-            ret = eg_enc_encode_uint(&num, elem->val, 0, 1);
+            ret = eg_enc_encode_num(&num, elem->val, 0, 1);
             *(u_int16_t *)(vh + 2) &= ~htons(0x1 << 12);
             *(u_int16_t *)(vh + 2) |= htons((ntohl(num) & 0x1) << 12);
             break;
         case EG_ENC_VLAN_VID:
-            ret = eg_enc_encode_uint(&num, elem->val, 0, 0xfff);
+            ret = eg_enc_encode_num(&num, elem->val, 0, 0xfff);
             *(u_int16_t *)(vh + 2) &= ~htons(0xfff);
             *(u_int16_t *)(vh + 2) |= htons(ntohl(num) & 0xfff);
             break;

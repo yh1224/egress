@@ -152,12 +152,12 @@ eg_buffer_t *eg_enc_encode_pppoe_session(eg_elem_t *elems, void *lower)
         }
         switch (enc->id) {
         case EG_ENC_PPPOE_VER:
-            ret = eg_enc_encode_uint(&num, elem->val, 0, 0x0f);
+            ret = eg_enc_encode_num(&num, elem->val, 0, 0x0f);
             pppoeh->vertype &= 0x0f;
             pppoeh->vertype |= (num << 4);
             break;
         case EG_ENC_PPPOE_TYPE:
-            ret = eg_enc_encode_uint(&num, elem->val, 0, 0x0f);
+            ret = eg_enc_encode_num(&num, elem->val, 0, 0x0f);
             pppoeh->vertype &= 0xf0;
             pppoeh->vertype |= num;
             break;

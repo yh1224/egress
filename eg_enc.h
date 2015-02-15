@@ -87,7 +87,7 @@ eg_buffer_t *eg_enc_encode_icmpv6(struct eg_elem *, void *lower);
 eg_buffer_t *eg_enc_encode_raw(struct eg_elem *, void *lower);
 
 /* common field encoder */
-int eg_enc_encode_uint(u_int32_t *result, eg_elem_val_t *val, u_int32_t min, u_int32_t max);
+int eg_enc_encode_num(u_int32_t *result, eg_elem_val_t *val, u_int32_t min, u_int32_t max);
 int eg_enc_encode_uint32(u_int32_t *result, eg_elem_val_t *val);
 int eg_enc_encode_uint16(u_int16_t *result, eg_elem_val_t *val);
 int eg_enc_encode_uint8(u_int8_t *result, eg_elem_val_t *val);

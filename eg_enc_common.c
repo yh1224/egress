@@ -81,7 +81,7 @@ static int eg_enc_strtoul(unsigned long *result, char *str)
 }
 
 /**
- * encode number (uint32 host byte order)
+ * encode number (uint32 host byte order with range)
  *
  * @param[out] result result
  * @param[in] val encode string
@@ -91,7 +91,7 @@ static int eg_enc_strtoul(unsigned long *result, char *str)
  * @retval >=0 encoded length
  * @retval <0 fail
  */
-static int eg_enc_encode_num(u_int32_t *result, eg_elem_val_t *val, u_int32_t min, u_int32_t max)
+int eg_enc_encode_num(u_int32_t *result, eg_elem_val_t *val, u_int32_t min, u_int32_t max)
 {
     unsigned long num;
 
@@ -112,30 +112,6 @@ static int eg_enc_encode_num(u_int32_t *result, eg_elem_val_t *val, u_int32_t mi
     }
 
     *result = (u_int32_t)num;
-    return sizeof(*result);
-}
-
-/**
- * encode number (uint32 with range)
- *
- * @param[out] result result
- * @param[in] val encode string
- * @param[in] min minimum number
- * @param[in] max maximum number
- *
- * @retval >=0 encoded length
- * @retval <0 fail
- */
-int eg_enc_encode_uint(u_int32_t *result, eg_elem_val_t *val, u_int32_t min, u_int32_t max)
-{
-    u_int32_t num;
-    int ret;
-
-    ret = eg_enc_encode_num(&num, val, min, max);
-    if (ret < 0) {
-        return ret;
-    }
-    *result = htonl(num);
     return sizeof(*result);
 }
 

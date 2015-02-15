@@ -203,7 +203,7 @@ eg_buffer_t *eg_enc_encode_tcp(eg_elem_t *elems, void *lower)
                 ret = 0;
             } else {
                 autoflags &= ~AUTOFLAG_OFFSET;
-                ret = eg_enc_encode_uint(&num, elem->val, 0, 15);
+                ret = eg_enc_encode_num(&num, elem->val, 0, 15);
                 tcph->th_off = (u_int8_t)num;
             }
             break;
