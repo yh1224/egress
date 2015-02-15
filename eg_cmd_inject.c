@@ -22,6 +22,7 @@ static void usage()
     printf("usage: eg inject [-c] -i <device>\n");
     printf("\n");
     printf("    -c                    auto complete sender MAC address\n");
+    printf("    -q                    quiet mode\n");
     printf("    -i <device>           interface to inject\n");
 }
 
@@ -29,6 +30,29 @@ enum {
     EG_FILETYPE_PCAP = 0,  /* pcap format (default) */
     EG_FILETYPE_RAW = 1,   /* raw frame */
 };
+
+/**
+ * print hexadecimal dump
+ */
+void print_hexdump(const char *hexbin, int len) {
+  int i;
+  const char *p;
+
+  p = hexbin;
+  for (i = 0; i < len; i++) {
+    if (i != 0 && i % 32 == 0) {
+      printf("\n");
+    }
+    if ((i % 8) == 0) {
+      printf(" ");
+    }
+    printf("%02x", (unsigned char)*p);
+    p++;
+  }
+  printf("\n");
+
+  return;
+}
 
 /**
  * eg_inject main
@@ -43,13 +67,14 @@ int eg_inject_main(int argc, char *argv[])
     char *ifname = NULL;
     char *infile = NULL;
     int filetype = EG_FILETYPE_PCAP;
+    int qflag = 0;
     int c;
     FILE *in;
     int out;
     int len;
     struct timeval tv;
 
-    while ((c = getopt(argc, argv, "ct:r:i:h?")) != -1) {
+    while ((c = getopt(argc, argv, "ct:r:i:qh?")) != -1) {
         switch (c) {
         case 'c':
             sendflags |= PKT_SEND_FLAG_COMPLETE;
@@ -70,6 +95,9 @@ int eg_inject_main(int argc, char *argv[])
             break;
         case 'i':
             ifname = optarg;
+            break;
+        case 'q':
+            qflag = 1;
             break;
         case 'h':
         case '?':
@@ -98,10 +126,18 @@ int eg_inject_main(int argc, char *argv[])
     if (filetype == EG_FILETYPE_PCAP) {
         while (pkt_pcap_read(in, buf, sizeof(buf), &len, NULL, &tv) > 0) {
             pkthandler.send(out, buf, len);
+            if (!qflag) {
+                printf("\n---> %d bytes to %s\n", len, ifname);
+                print_hexdump(buf, len);
+            }
         }
     } else {
         while ((len = fread(buf, 1, sizeof(buf), in)) > 0) {
             pkthandler.send(out, buf, len);
+            if (!qflag) {
+                printf("\n---> %d bytes to %s\n", len, ifname);
+                print_hexdump(buf, len);
+            }
         }
     }
 
