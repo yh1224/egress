@@ -212,7 +212,7 @@ eg_buffer_t *eg_enc_encode_pppoe_session(eg_elem_t *elems, void *lower)
 
     /* fix PPPoE length */
     if (autoflags & AUTOFLAG_LENGTH) {
-        pppoeh->length = htons((u_int16_t)buf->len - 2/* protocol field */);
+        pppoeh->length = htons((u_int16_t)buf->len - sizeof(*pppoeh) + 2/* protocol field */);
     }
 
     return buf;
