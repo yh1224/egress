@@ -19,10 +19,11 @@
  */
 static void usage()
 {
-    printf("usage: eg inject [-c] -i <device>\n");
+    printf("usage: eg inject [-qc] [-w <usec>] -i <device>\n");
     printf("\n");
     printf("    -c                    auto complete sender MAC address\n");
     printf("    -q                    quiet mode\n");
+    printf("    -w <usec>             sending interval\n");
     printf("    -i <device>           interface to inject\n");
 }
 
@@ -67,6 +68,7 @@ int eg_inject_main(int argc, char *argv[])
     char *ifname = NULL;
     char *infile = NULL;
     int filetype = EG_FILETYPE_PCAP;
+    int interval = 0;
     int qflag = 0;
     int c;
     FILE *in;
@@ -74,10 +76,13 @@ int eg_inject_main(int argc, char *argv[])
     int len;
     struct timeval tv;
 
-    while ((c = getopt(argc, argv, "ct:r:i:qh?")) != -1) {
+    while ((c = getopt(argc, argv, "cw:t:r:i:qh?")) != -1) {
         switch (c) {
         case 'c':
             sendflags |= PKT_SEND_FLAG_COMPLETE;
+            break;
+        case 'w':
+            interval = atoi(optarg);
             break;
         case 't':
             if (strncasecmp("PCAP", optarg, strlen(optarg)) == 0) {
@@ -130,6 +135,9 @@ int eg_inject_main(int argc, char *argv[])
                 printf("\n---> %d bytes to %s\n", len, ifname);
                 print_hexdump(buf, len);
             }
+            if (interval) {
+                usleep(interval * 1000);
+            }
         }
     } else {
         while ((len = fread(buf, 1, sizeof(buf), in)) > 0) {
@@ -137,6 +145,9 @@ int eg_inject_main(int argc, char *argv[])
             if (!qflag) {
                 printf("\n---> %d bytes to %s\n", len, ifname);
                 print_hexdump(buf, len);
+            }
+            if (interval) {
+                usleep(interval * 1000);
             }
         }
     }
