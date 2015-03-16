@@ -429,7 +429,7 @@ static eg_enc_vals_t dhcpv6optcodes[] = {
 };
 
 /**
- * encode DHCPv6
+ * encode DHCPv6 option
  *
  * @param[in] elems element list to encode
  * @param[in] lower lower protocol header

@@ -50,10 +50,30 @@ static eg_enc_encoder_t eg_enc_icmpv6_field_encoders[] = {
     {}
 };
 
+static eg_buffer_t *eg_enc_encode_icmpv6_rs(eg_elem_t *elems, void *lower);
+static eg_buffer_t *eg_enc_encode_icmpv6_ra(eg_elem_t *elems, void *lower);
+static eg_buffer_t *eg_enc_encode_icmpv6_ns(eg_elem_t *elems, void *lower);
+static eg_buffer_t *eg_enc_encode_icmpv6_na(eg_elem_t *elems, void *lower);
+
 /**
  * block encoder for icmpv6
  */
 static eg_enc_encoder_t eg_enc_icmpv6_block_encoders[] = {
+    {
+        .name = "ND_NEIGHBOR_SOLICIT",
+        .desc = "Neighbor Solicit",
+        .encode = eg_enc_encode_icmpv6_ns,
+    },
+    {
+        .name = "ND_NEIGHBOR_ADVERT",
+        .desc = "Neighbor Advertisement",
+        .encode = eg_enc_encode_icmpv6_na,
+    },
+    {
+        .name = "ND_ROUTER_ADVERT",
+        .desc = "Router Advertisement",
+        .encode = eg_enc_encode_icmpv6_ra,
+    },
     {
         .name = "DATA",
         .desc = "ICMPv6 data",
@@ -214,8 +234,9 @@ eg_buffer_t *eg_enc_encode_icmpv6(eg_elem_t *elems, void *lower)
     eg_buffer_t *buf, *bufn;
     struct icmp6_hdr *icmp6h;
     int hlen = 4;
-#define AUTOFLAG_CSUM   (1 << 0)
-    u_int32_t autoflags = (AUTOFLAG_CSUM);  /* auto flags */
+#define AUTOFLAG_TYPE   (1 << 0)
+#define AUTOFLAG_CSUM   (1 << 1)
+    u_int32_t autoflags = (AUTOFLAG_TYPE | AUTOFLAG_CSUM);  /* auto flags */
     eg_elem_t *elem;
     eg_enc_encoder_t *enc;
     int ret;
@@ -239,7 +260,12 @@ eg_buffer_t *eg_enc_encode_icmpv6(eg_elem_t *elems, void *lower)
         switch (enc->id) {
         case EG_ENC_ICMPV6_TYPE:
             if (elem->val->type == EG_TYPE_KEYWORD) {
-                ret = eg_enc_encode_name_uint8(&icmp6h->icmp6_type, elem->val, icmpv6types);
+                if (eg_enc_val_is_keyword(elem->val, "AUTO")) {
+                    autoflags |= AUTOFLAG_TYPE;
+                    ret = 0;
+                } else {
+                    ret = eg_enc_encode_name_uint8(&icmp6h->icmp6_type, elem->val, icmpv6types);
+                }
             } else {
                 ret = eg_enc_encode_uint8(&icmp6h->icmp6_type, elem->val);
             }
@@ -281,6 +307,13 @@ eg_buffer_t *eg_enc_encode_icmpv6(eg_elem_t *elems, void *lower)
         if (bufn == NULL) {
             goto err;
         }
+        /* auto fill type */
+        if (autoflags & AUTOFLAG_TYPE) {
+            autoflags &= ~AUTOFLAG_TYPE;
+            eg_elem_val_t v;
+            v.str = elem->name;
+            eg_enc_encode_name_uint8(&icmp6h->icmp6_type, &v, icmpv6types);
+        }
         buf = eg_buffer_merge(buf, bufn, -1);
     }
 
@@ -305,6 +338,595 @@ eg_buffer_t *eg_enc_encode_icmpv6(eg_elem_t *elems, void *lower)
             }
         }
     }
+
+    return buf;
+
+err:
+    eg_buffer_destroy(buf);
+    return NULL;
+}
+
+/**
+ * fields for icmpv6 neighbor solicit
+ */
+enum {
+    EG_ENC_ICMPV6_NS_TARGET = 1,
+};
+
+/**
+ * field encoder for icmpv6 neighbor solicit
+ */
+static eg_enc_encoder_t eg_enc_icmpv6_ns_field_encoders[] = {
+    {
+        .id = EG_ENC_ICMPV6_NS_TARGET,
+        .name = "TARGET",
+        .desc = "Target",
+    },
+    {}
+};
+
+static eg_buffer_t *eg_enc_encode_icmpv6_nd_option(eg_elem_t *elems, void *lower);
+
+/**
+ * block encoder for icmpv6 neighbor solicit
+ */
+static eg_enc_encoder_t eg_enc_icmpv6_ns_block_encoders[] = {
+    {
+        .name = "OPTION",
+        .desc = "ICMPv6 Neighbor Discovery option",
+        .encode = eg_enc_encode_icmpv6_nd_option,
+    },
+    {
+        .name = "DATA",
+        .desc = "ICMPv6 data",
+        .encode = eg_enc_encode_raw,
+    },
+    {}
+};
+
+/**
+ * encode ICMPv6 Neighbor Solicit
+ *
+ * @param[in] elems element list to encode
+ * @param[in] lower lower protocol header
+ *
+ * @return buffer
+ */
+static eg_buffer_t *eg_enc_encode_icmpv6_ns(eg_elem_t *elems, void *lower)
+{
+    eg_buffer_t *buf, *bufn;
+    struct nd_neighbor_solicit *nsh;
+    int hlen = sizeof(*nsh) - 4; /* excludes icmpv6 common header */
+    eg_elem_t *elem;
+    eg_enc_encoder_t *enc;
+    int ret;
+
+    buf = eg_buffer_create(hlen);
+    if (buf == NULL) {
+        return NULL;
+    }
+    nsh = (struct nd_neighbor_solicit *)(buf->ptr - 4);
+
+    /* encode fields */
+    for (elem = elems; elem != NULL; elem = elem->next) {
+        if (elem->val == NULL) {
+            continue;   /* skip block */
+        }
+        ret = -1;
+        enc = eg_enc_get_encoder(elem->name, eg_enc_icmpv6_ns_field_encoders);
+        if (!enc) {
+            goto err;
+        }
+        switch (enc->id) {
+        case EG_ENC_ICMPV6_NS_TARGET:
+            ret = eg_enc_encode_ipv6addr(&nsh->nd_ns_target, elem->val);
+            break;
+        default:
+            goto err;
+        }
+        if (ret < 0) {
+            goto err;
+        }
+    }
+
+    /* encode blocks */
+    for (elem = elems; elem != NULL; elem = elem->next) {
+        if (elem->val != NULL) {
+            continue;   /* skip field */
+        }
+        enc = eg_enc_get_encoder(elem->name, eg_enc_icmpv6_ns_block_encoders);
+        if (!enc) {
+            goto err;
+        }
+        bufn = enc->encode(elem->elems, nsh);
+        if (bufn == NULL) {
+            goto err;
+        }
+        buf = eg_buffer_merge(buf, bufn, -1);
+    }
+
+    return buf;
+
+err:
+    eg_buffer_destroy(buf);
+    return NULL;
+}
+
+/**
+ * fields for icmpv6 neighbor solicit
+ */
+enum {
+    EG_ENC_ICMPV6_NA_TARGET = 1,
+    EG_ENC_ICMPV6_NA_FLAGS,
+};
+
+/**
+ * field encoder for icmpv6 neighbor solicit
+ */
+static eg_enc_encoder_t eg_enc_icmpv6_na_field_encoders[] = {
+    {
+        .id = EG_ENC_ICMPV6_NA_TARGET,
+        .name = "TARGET",
+        .desc = "Target",
+    },
+    {
+        .id = EG_ENC_ICMPV6_NA_FLAGS,
+        .name = "FLAGS",
+        .desc = "Flags",
+    },
+    {}
+};
+
+/**
+ * block encoder for icmpv6 neighbor solicit
+ */
+static eg_enc_encoder_t eg_enc_icmpv6_na_block_encoders[] = {
+    {
+        .name = "OPTION",
+        .desc = "ICMPv6 Neighbor Discovery option",
+        .encode = eg_enc_encode_icmpv6_nd_option,
+    },
+    {
+        .name = "DATA",
+        .desc = "ICMPv6 data",
+        .encode = eg_enc_encode_raw,
+    },
+    {}
+};
+
+/**
+ * neighbor advertisement flags definition
+ */
+static eg_enc_vals_t naflags[] = {
+    {
+        .name = "ROUTER",
+        .desc = "Router",
+        .val =0x80000000,
+    },
+    {
+        .name = "SOLICITED",
+        .desc = "Solicited",
+        .val = 0x40000000,
+    },
+    {
+        .name = "OVERRIDE",
+        .desc = "Override",
+        .val = 0x20000000,
+    },
+    {},
+};
+
+/**
+ * encode ICMPv6 Neighbor Advertisement
+ *
+ * @param[in] elems element list to encode
+ * @param[in] lower lower protocol header
+ *
+ * @return buffer
+ */
+static eg_buffer_t *eg_enc_encode_icmpv6_na(eg_elem_t *elems, void *lower)
+{
+    eg_buffer_t *buf, *bufn;
+    struct nd_neighbor_advert *nah;
+    int hlen = sizeof(*nah) - 4; /* excludes icmpv6 common header */
+    eg_elem_t *elem;
+    eg_enc_encoder_t *enc;
+    int ret;
+
+    buf = eg_buffer_create(hlen);
+    if (buf == NULL) {
+        return NULL;
+    }
+    nah = (struct nd_neighbor_advert *)(buf->ptr - 4);
+
+    /* encode fields */
+    for (elem = elems; elem != NULL; elem = elem->next) {
+        if (elem->val == NULL) {
+            continue;   /* skip block */
+        }
+        ret = -1;
+        enc = eg_enc_get_encoder(elem->name, eg_enc_icmpv6_na_field_encoders);
+        if (!enc) {
+            goto err;
+        }
+        switch (enc->id) {
+        case EG_ENC_ICMPV6_NA_TARGET:
+            ret = eg_enc_encode_ipv6addr(&nah->nd_na_target, elem->val);
+            break;
+        case EG_ENC_ICMPV6_NA_FLAGS:
+            if (elem->val->type == EG_TYPE_KEYWORD) {
+                ret = eg_enc_encode_flags_uint32(&nah->nd_na_flags_reserved, elem->val, naflags);
+            } else {
+                ret = eg_enc_encode_uint32(&nah->nd_na_flags_reserved, elem->val);
+            }
+            break;
+        default:
+            goto err;
+        }
+        if (ret < 0) {
+            goto err;
+        }
+    }
+
+    /* encode blocks */
+    for (elem = elems; elem != NULL; elem = elem->next) {
+        if (elem->val != NULL) {
+            continue;   /* skip field */
+        }
+        enc = eg_enc_get_encoder(elem->name, eg_enc_icmpv6_na_block_encoders);
+        if (!enc) {
+            goto err;
+        }
+        bufn = enc->encode(elem->elems, nah);
+        if (bufn == NULL) {
+            goto err;
+        }
+        buf = eg_buffer_merge(buf, bufn, -1);
+    }
+
+    return buf;
+
+err:
+    eg_buffer_destroy(buf);
+    return NULL;
+}
+
+/**
+ * fields for icmpv6 router advertisement
+ */
+enum {
+    EG_ENC_ICMPV6_RA_HOPLIMIT = 1,
+    EG_ENC_ICMPV6_RA_FLAGS,
+    EG_ENC_ICMPV6_RA_LIFETIME,
+    EG_ENC_ICMPV6_RA_REACHABLE,
+    EG_ENC_ICMPV6_RA_RETRANSMIT,
+};
+
+/**
+ * field encoder for icmpv6 router advertisement
+ */
+static eg_enc_encoder_t eg_enc_icmpv6_ra_field_encoders[] = {
+    {
+        .id = EG_ENC_ICMPV6_RA_HOPLIMIT,
+        .name = "HOPLIMIT",
+        .desc = "Current Hop Limit",
+    },
+    {
+        .id = EG_ENC_ICMPV6_RA_FLAGS,
+        .name = "FLAGS",
+        .desc = "Autoconfig Flags",
+    },
+    {
+        .id = EG_ENC_ICMPV6_RA_LIFETIME,
+        .name = "LIFETIME",
+        .desc = "Router Lifetime",
+    },
+    {
+        .id = EG_ENC_ICMPV6_RA_REACHABLE,
+        .name = "REACHABLE",
+        .desc = "Reachable Time",
+    },
+    {
+        .id = EG_ENC_ICMPV6_RA_RETRANSMIT,
+        .name = "RETRANSMIT",
+        .desc = "Retransmit Timer",
+    },
+    {}
+};
+
+/**
+ * block encoder for icmpv6 router advertisement
+ */
+static eg_enc_encoder_t eg_enc_icmpv6_ra_block_encoders[] = {
+    {
+        .name = "OPTION",
+        .desc = "ICMPv6 Neighbor Discovery option",
+        .encode = eg_enc_encode_icmpv6_nd_option,
+    },
+    {
+        .name = "DATA",
+        .desc = "ICMPv6 data",
+        .encode = eg_enc_encode_raw,
+    },
+    {}
+};
+
+/**
+ * autoconfig flags definition
+ */
+static eg_enc_vals_t autoconfflags[] = {
+    {
+        .name = "MANAGED",
+        .desc = "Managed",
+        .val = 0x80,
+    },
+    {
+        .name = "OTHER",
+        .desc = "Other option",
+        .val = 0x40,
+    },
+    {
+        .name = "HA",
+        .desc = "HA",
+        .val = 0x20,
+    },
+    {},
+};
+
+/**
+ * encode ICMPv6 Router Advertisement
+ *
+ * @param[in] elems element list to encode
+ * @param[in] lower lower protocol header
+ *
+ * @return buffer
+ */
+static eg_buffer_t *eg_enc_encode_icmpv6_ra(eg_elem_t *elems, void *lower)
+{
+    eg_buffer_t *buf, *bufn;
+    struct nd_router_advert *rah;
+    int hlen = sizeof(*rah) - 4; /* excludes icmpv6 common header */
+    eg_elem_t *elem;
+    eg_enc_encoder_t *enc;
+    int ret;
+
+    buf = eg_buffer_create(hlen);
+    if (buf == NULL) {
+        return NULL;
+    }
+    rah = (struct nd_router_advert *)(buf->ptr - 4);
+
+    /* encode fields */
+    for (elem = elems; elem != NULL; elem = elem->next) {
+        if (elem->val == NULL) {
+            continue;   /* skip block */
+        }
+        ret = -1;
+        enc = eg_enc_get_encoder(elem->name, eg_enc_icmpv6_ra_field_encoders);
+        if (!enc) {
+            goto err;
+        }
+        switch (enc->id) {
+        case EG_ENC_ICMPV6_RA_HOPLIMIT:
+            ret = eg_enc_encode_uint8(&rah->nd_ra_curhoplimit, elem->val);
+            break;
+        case EG_ENC_ICMPV6_RA_FLAGS:
+            if (elem->val->type == EG_TYPE_KEYWORD) {
+                ret = eg_enc_encode_flags_uint8(&rah->nd_ra_flags_reserved, elem->val, autoconfflags);
+            } else {
+                ret = eg_enc_encode_uint8(&rah->nd_ra_flags_reserved, elem->val);
+            }
+            break;
+        case EG_ENC_ICMPV6_RA_LIFETIME:
+            ret = eg_enc_encode_uint16(&rah->nd_ra_router_lifetime, elem->val);
+            break;
+        case EG_ENC_ICMPV6_RA_REACHABLE:
+            ret = eg_enc_encode_uint32(&rah->nd_ra_reachable, elem->val);
+            break;
+        case EG_ENC_ICMPV6_RA_RETRANSMIT:
+            ret = eg_enc_encode_uint32(&rah->nd_ra_retransmit, elem->val);
+            break;
+        default:
+            goto err;
+        }
+        if (ret < 0) {
+            goto err;
+        }
+    }
+
+    /* encode blocks */
+    for (elem = elems; elem != NULL; elem = elem->next) {
+        if (elem->val != NULL) {
+            continue;   /* skip field */
+        }
+        enc = eg_enc_get_encoder(elem->name, eg_enc_icmpv6_ra_block_encoders);
+        if (!enc) {
+            goto err;
+        }
+        bufn = enc->encode(elem->elems, rah);
+        if (bufn == NULL) {
+            goto err;
+        }
+        buf = eg_buffer_merge(buf, bufn, -1);
+    }
+
+    return buf;
+
+err:
+    eg_buffer_destroy(buf);
+    return NULL;
+}
+
+/**
+ * fields for icmpv6 neighbor discovery option
+ */
+enum {
+    EG_ENC_ICMPV6NDOPT_TYPE = 1,
+    EG_ENC_ICMPV6NDOPT_LEN,
+    EG_ENC_ICMPV6NDOPT_DATA,
+};
+
+/**
+ * field encoder for icmpv6 neighbor discovery option
+ */
+static eg_enc_encoder_t eg_enc_icmpv6ndopt_field_encoders[] = {
+    {
+        .id = EG_ENC_ICMPV6NDOPT_TYPE,
+        .name = "TYPE",
+        .desc = "ICMPv6 Neighbor Discovery option type",
+    },
+    {
+        .id = EG_ENC_ICMPV6NDOPT_LEN,
+        .name = "LENGTH",
+        .desc = "ICMPv6 Neighbor Discovery option length",
+    },
+    {
+        .id = EG_ENC_ICMPV6NDOPT_DATA,
+        .name = "DATA",
+        .desc = "ICMPv6 Neighbor Discovery option data",
+    },
+    {}
+};
+
+/**
+ * block encoder for dhcpv6 option
+ */
+static eg_enc_encoder_t eg_enc_icmpv6ndopt_block_encoders[] = {
+    {
+        .name = "DATA",
+        .desc = "ICMPv6 Neighbor Discovery option data",
+        .encode = eg_enc_encode_raw,
+    },
+    {}
+};
+
+/**
+ * icmpv6 neighbor discovery option type definition
+ */
+static eg_enc_vals_t icmpv6ndopttypes[] = {
+    {
+        .name = "SOURCE_LINKADDR",
+        .desc = "SOURCE_LINKADDR",
+        .val = 1,
+    },
+    {
+        .name = "TARGET_LINKADDR",
+        .desc = "TARGET_LINKADDR",
+        .val = 2,
+    },
+    {
+        .name = "PREFIX_INFORMATION",
+        .desc = "PREFIX_INFORMATION",
+        .val = 3,
+    },
+    {
+        .name = "REDIRECTED_HEADER",
+        .desc = "REDIRECTED_HEADER",
+        .val = 4,
+    },
+    {
+        .name = "MTU",
+        .desc = "MTU",
+        .val = 5,
+    },
+    {
+        .name = "ADV_INTERVAL",
+        .desc = "ADV_INTERVAL",
+        .val = 7,
+    },
+    {
+        .name = "HA_INFORMATION",
+        .desc = "HA_INFORMATION",
+        .val = 8,
+    },
+    {},
+};
+
+/**
+ * encode Neighbor Discovery option
+ *
+ * @param[in] elems element list to encode
+ * @param[in] lower lower protocol header
+ *
+ * @return buffer
+ */
+static eg_buffer_t *eg_enc_encode_icmpv6_nd_option(eg_elem_t *elems, void *lower)
+{
+    eg_buffer_t *buf, *bufn;
+#define AUTOFLAG_OPTLEN (1 << 8)
+    u_int32_t autoflags = (AUTOFLAG_OPTLEN);  /* auto flags */
+    int datalen = 0;
+    eg_elem_t *elem;
+    eg_enc_encoder_t *enc;
+    int ret;
+
+    buf = eg_buffer_create(2);
+    if (buf == NULL) {
+        return NULL;
+    }
+
+    /* encode fields */
+    for (elem = elems; elem != NULL; elem = elem->next) {
+        if (elem->val == NULL) {
+            continue;   /* skip block */
+        }
+        ret = -1;
+        enc = eg_enc_get_encoder(elem->name, eg_enc_icmpv6ndopt_field_encoders);
+        if (!enc) {
+            goto err;
+        }
+        switch (enc->id) {
+        case EG_ENC_ICMPV6NDOPT_TYPE:
+            if (elem->val->type == EG_TYPE_KEYWORD) {
+                ret = eg_enc_encode_name_uint8(buf->ptr, elem->val, icmpv6ndopttypes);
+            } else {
+                ret = eg_enc_encode_uint8(buf->ptr, elem->val);
+            }
+            break;
+        case EG_ENC_ICMPV6NDOPT_LEN:
+            if (eg_enc_val_is_keyword(elem->val, "AUTO")) {
+                autoflags |= AUTOFLAG_OPTLEN;
+                ret = 0;
+            } else {
+                autoflags &= ~AUTOFLAG_OPTLEN;
+                ret = eg_enc_encode_uint8(buf->ptr + 1, elem->val);
+            }
+            break;
+        case EG_ENC_ICMPV6NDOPT_DATA:
+            ret = eg_enc_encode_hex(buf->ptr + 2, elem->val, 0, 254);
+            datalen = ret;
+            break;
+        default:
+            goto err;
+        }
+        if (ret < 0) {
+            goto err;
+        }
+    }
+
+    /* encode blocks */
+    for (elem = elems; elem != NULL; elem = elem->next) {
+        if (elem->val != NULL) {
+            continue;   /* skip field */
+        }
+        enc = eg_enc_get_encoder(elem->name, eg_enc_icmpv6ndopt_block_encoders);
+        if (!enc) {
+            goto err;
+        }
+        bufn = enc->encode(elem->elems, NULL);
+        if (bufn == NULL) {
+            goto err;
+        }
+        datalen += bufn->len;
+        buf = eg_buffer_merge(buf, bufn, -1);
+    }
+
+    /* fix option length */
+    if (autoflags & AUTOFLAG_OPTLEN) {
+        *(buf->ptr + 1) = datalen;
+    }
+
+    buf->len = 2 + datalen; /* type + len + data */
 
     return buf;
 
