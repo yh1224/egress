@@ -117,6 +117,11 @@ static eg_enc_encoder_t eg_enc_ipv6_block_encoders[] = {
         .desc = "ICMPv6",
         .encode = eg_enc_encode_icmpv6,
     },
+    {
+        .name = "RAW",
+        .desc = "raw data",
+        .encode = eg_enc_encode_raw,
+    },
 
     /* alias */
     {

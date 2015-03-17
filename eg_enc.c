@@ -32,6 +32,11 @@ eg_enc_encoder_t eg_enc_encoders[] = {
         .desc = "IPv6 packet",
         .encode = eg_enc_encode_ipv6,
     },
+    {
+        .name = "RAW",
+        .desc = "raw data",
+        .encode = eg_enc_encode_raw,
+    },
 
     /* alias */
     {

@@ -78,6 +78,11 @@ static eg_enc_encoder_t eg_enc_ether_block_encoders[] = {
         .desc = "IPv6",
         .encode = eg_enc_encode_ipv6,
     },
+    {
+        .name = "RAW",
+        .desc = "raw data",
+        .encode = eg_enc_encode_raw,
+    },
 
     /* alias */
     {
