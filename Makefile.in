@@ -50,7 +50,10 @@ doc : $(GENSRCS)
 clean :
 	cd $(PKTTOOLSDIR) && make clean
 	rm -f $(TARGETS) $(OBJS) $(LIB) $(LIBOBJS) $(GENSRCS) $(GENOBJS)
-	rm -fr html
+	rm -fr *.o html
 	find . -type f -exec chmod -x {} \;
 	chmod +x configure
+
+distclean: clean
+	rm -f Makefile config.h config.status config.log
 
