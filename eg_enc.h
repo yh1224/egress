@@ -84,6 +84,7 @@ eg_buffer_t *eg_enc_encode_icmp(struct eg_elem *, void *lower);
 eg_buffer_t *eg_enc_encode_tcp(struct eg_elem *, void *lower);
 eg_buffer_t *eg_enc_encode_udp(struct eg_elem *, void *lower);
 eg_buffer_t *eg_enc_encode_icmpv6(struct eg_elem *, void *lower);
+eg_buffer_t *eg_enc_encode_dhcpv6(eg_elem_t *elems, void *lower);
 eg_buffer_t *eg_enc_encode_raw(struct eg_elem *, void *lower);
 
 /* common field encoder */

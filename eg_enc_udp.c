@@ -61,6 +61,11 @@ static eg_enc_encoder_t eg_enc_udp_field_encoders[] = {
  */
 static eg_enc_encoder_t eg_enc_udp_block_encoders[] = {
     {
+        .name = "DHCPV6",
+        .desc = "DHCPv6",
+        .encode = eg_enc_encode_dhcpv6,
+    },
+    {
         .name = "PAYLOAD",
         .desc = "payload",
         .encode = eg_enc_encode_raw,
