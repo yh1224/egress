@@ -465,6 +465,8 @@ static int eg_enc_encode_flags(u_int32_t *result, eg_elem_val_t *val, eg_enc_val
     eg_enc_vals_t *p;
     char *namebuf, *pname, *saveptr;
     int ret = sizeof(*result);
+    u_int32_t submatch;
+    int nmatch;
 
     namebuf = malloc(strlen(val->str) + 1);
     strcpy(namebuf, val->str);
@@ -472,14 +474,23 @@ static int eg_enc_encode_flags(u_int32_t *result, eg_elem_val_t *val, eg_enc_val
     *result = 0;
     pname = strtok_r(namebuf, delim, &saveptr);
     do {
+        submatch = nmatch = 0;
         for (p = encflags; p->name != NULL; p++) {
             if (!strcasecmp(p->name, pname)) {
                 *result |= p->val;
                 break;
             }
+            if (!strncasecmp(p->name, pname, strlen(pname))) {
+                submatch = p->val;
+                nmatch++;
+            }
         }
         if (p->name == NULL) {
-            fprintf(stderr, "Unknown flag: %s\n", pname);
+            if (nmatch == 1) {
+                *result |= submatch;
+                continue;
+            }
+            fprintf(stderr, "unknown flag: %s\n", pname);
             eg_help_vals(encflags);
             ret = -1;
             goto end;
