@@ -157,17 +157,27 @@ static eg_enc_vals_t ipv4protocols[] = {
     {
         .name = "ICMP",
         .desc = "ICMP",
-        .val = IPPROTO_ICMP,
+        .val = IPPROTO_ICMP, /* 1 */
+    },
+    {
+        .name = "IPV4",
+        .desc = "IPv4",
+        .val = IPPROTO_IPIP, /* 4 */
     },
     {
         .name = "TCP",
         .desc = "TCP",
-        .val = IPPROTO_TCP,           
+        .val = IPPROTO_TCP, /* 6 */
     },
     {
         .name = "UDP",
         .desc = "UDP",
-        .val = IPPROTO_UDP,            
+        .val = IPPROTO_UDP, /* 17 */
+    },
+    {
+        .name = "IPV6",
+        .desc = "IPv6",
+        .val = IPPROTO_IPV6, /* 41 */
     },
     {},
 };
