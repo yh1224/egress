@@ -10,8 +10,17 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CXX
 AC_PROG_CC
 AC_PROG_YACC
-AM_PROG_LEX
+AC_PROG_LEX
 #AC_PROG_INSTALL
+if test "x$LEX" != xflex; then
+  AC_MSG_ERROR([Please install flex before installing.])
+fi
+if test x"$YACC" = "xyacc"; then
+  AC_CHECK_PROG([YACC_EXISTS], [yacc], [yes], [no])
+  if test x"$YACC_EXISTS" != xyes; then
+    AC_MSG_ERROR([[bison/byacc/yacc not found. Please install bison]])
+  fi
+fi
 
 # Checks for libraries.
 # FIXME: Replace `main' with a function in `-lpkt':
