@@ -122,12 +122,6 @@ static eg_enc_encoder_t eg_enc_ipv6_block_encoders[] = {
         .desc = "raw data",
         .encode = eg_enc_encode_raw,
     },
-
-    /* alias */
-    {
-        .name = "IP",
-        .encode = eg_enc_encode_ipv4,
-    },
     {}
 };
 

@@ -83,12 +83,6 @@ static eg_enc_encoder_t eg_enc_ether_block_encoders[] = {
         .desc = "raw data",
         .encode = eg_enc_encode_raw,
     },
-
-    /* alias */
-    {
-        .name = "IP",
-        .encode = eg_enc_encode_ipv4,
-    },
     {}
 };
 
@@ -120,12 +114,6 @@ static eg_enc_vals_t ethertypes[] = {
         .name = "IPV6",
         .desc = "IPv6",
         .val = ETHERTYPE_IPV6, /* 0x86dd */
-    },
-
-    /* alias */
-    {
-        .name = "IP",
-        .val = ETHERTYPE_IP, /* 0x0800 */
     },
     {},
 };

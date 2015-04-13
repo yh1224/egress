@@ -84,12 +84,6 @@ static eg_enc_encoder_t eg_enc_pppoe_block_encoders[] = {
         .desc = "IPv6",
         .encode = eg_enc_encode_ipv6,
     },
-
-    /* alias */
-    {
-        .name = "IP",
-        .encode = eg_enc_encode_ipv4,
-    },
     {}
 };
 
@@ -100,12 +94,6 @@ static eg_enc_vals_t pppprotocols[] = {
     {
         .name = "IPV4",
         .desc = "IPv4",
-        .val = 0x0021,
-    },
-
-    /* alias */
-    {
-        .name = "IP",
         .val = 0x0021,
     },
     {},
