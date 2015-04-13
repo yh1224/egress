@@ -57,6 +57,7 @@ typedef struct eg_buffer {
 typedef struct eg_enc_encoder {
     int id;                     /* identification */
     char *name;                 /* element name */
+    char *aliases;              /* element aliases (delimited by NUL) */
     char *desc;                 /* description */
     eg_buffer_t *(*encode)(struct eg_elem *, void *lower); /* encode function */
 } eg_enc_encoder_t;
@@ -66,6 +67,8 @@ typedef struct eg_enc_encoder {
  */
 typedef struct eg_enc_vals {
     char *name;                 /* keyword */
+
+    char *aliases;              /* keyword aliases (delimited by NUL) */
     char *desc;                 /* description */
     u_int32_t val;              /* number value */
 } eg_enc_vals_t;

@@ -368,13 +368,42 @@ int eg_enc_encode_ipv6addr(struct in6_addr *result, eg_elem_val_t *val)
 static int eg_enc_encode_name(u_int32_t *result, eg_elem_val_t *val, eg_enc_vals_t *encnames)
 {
     eg_enc_vals_t *p;
+    char *alias;
+#if defined(EG_ENC_NAME_SUBMATCH)
+    u_int32_t submatch = 0;
+    int nmatch = 0;
+#endif
 
     for (p = encnames; p->name != NULL; p++) {
         if (!strcasecmp(p->name, val->str)) {
             *result = p->val;
             return 0;
         }
+#if defined(EG_ENC_NAME_SUBMATCH)
+        if (!strncasecmp(p->name, val->str, strlen(val->str))) {
+            submatch = p->val;
+            nmatch++;
+        }
+#endif
+        for (alias = p->aliases; alias != NULL && *alias != '\0'; alias += strlen(alias) +1) {
+            if (!strcasecmp(alias, val->str)) {
+                *result = p->val;
+                return 0;
+            }
+#if defined(EG_ENC_ENCODER_SUBMATCH)
+            if (!strncasecmp(alias, val->str, strlen(val->str))) {
+                submatch = enc;
+                nmatch++;
+            }
+#endif
+        }
     }
+#if defined(EG_ENC_NAME_SUBMATCH)
+    if (nmatch == 1) {
+        *result = submatch;
+        return 0;
+    }
+#endif
     fprintf(stderr, "unknown name: %s\n", val->str);
     eg_help_vals(encnames);
     return -1;
@@ -465,8 +494,11 @@ static int eg_enc_encode_flags(u_int32_t *result, eg_elem_val_t *val, eg_enc_val
     eg_enc_vals_t *p;
     char *namebuf, *pname, *saveptr;
     int ret = sizeof(*result);
+    char *alias;
+#if defined(EG_ENC_NAME_SUBMATCH)
     u_int32_t submatch;
     int nmatch;
+#endif
 
     namebuf = malloc(strlen(val->str) + 1);
     strcpy(namebuf, val->str);
@@ -474,22 +506,41 @@ static int eg_enc_encode_flags(u_int32_t *result, eg_elem_val_t *val, eg_enc_val
     *result = 0;
     pname = strtok_r(namebuf, delim, &saveptr);
     do {
+#if defined(EG_ENC_NAME_SUBMATCH)
         submatch = nmatch = 0;
+#endif
         for (p = encflags; p->name != NULL; p++) {
             if (!strcasecmp(p->name, pname)) {
                 *result |= p->val;
-                break;
+                goto found;
             }
+#if defined(EG_ENC_NAME_SUBMATCH)
             if (!strncasecmp(p->name, pname, strlen(pname))) {
                 submatch = p->val;
                 nmatch++;
             }
+#endif
+            for (alias = p->aliases; alias != NULL && *alias != '\0'; alias += strlen(alias) +1) {
+                if (!strcasecmp(alias, pname)) {
+                    *result |= p->val;
+                    goto found;
+                }
+#if defined(EG_ENC_ENCODER_SUBMATCH)
+                if (!strncasecmp(alias, pname, strlen(name))) {
+                    submatch = p->val;
+                    nmatch++;
+                }
+#endif
+            }
         }
+found:
         if (p->name == NULL) {
+#if defined(EG_ENC_NAME_SUBMATCH)
             if (nmatch == 1) {
                 *result |= submatch;
                 continue;
             }
+#endif
             fprintf(stderr, "unknown flag: %s\n", pname);
             eg_help_vals(encflags);
             ret = -1;

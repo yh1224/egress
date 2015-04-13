@@ -70,11 +70,13 @@ static eg_enc_encoder_t eg_enc_ipv6_field_encoders[] = {
     {
         .id = EG_ENC_IPV6_SRCADDR,
         .name = "SRCADDR",
+        .aliases = "SRC\0SRCIP\0",
         .desc = "source address",
     },
     {
         .id = EG_ENC_IPV6_DSTADDR,
         .name = "DSTADDR",
+        .aliases = "DST\0DSTIP\0",
         .desc = "destination address",
     },
     {}

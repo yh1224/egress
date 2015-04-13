@@ -32,11 +32,13 @@ static eg_enc_encoder_t eg_enc_ether_field_encoders[] = {
     {
         .id = EG_ENC_ETHER_SRCMAC,
         .name = "SRCMAC",
+        .aliases = "SRC\0",
         .desc = "source address",
     },
     {
         .id = EG_ENC_ETHER_DSTMAC,
         .name = "DSTMAC",
+        .aliases = "DST\0",
         .desc = "destination address",
     },
     {

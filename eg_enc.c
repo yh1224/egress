@@ -51,21 +51,39 @@ eg_enc_encoder_t eg_enc_encoders[] = {
 eg_enc_encoder_t *eg_enc_get_encoder(char *name, eg_enc_encoder_t *encoders)
 {
     eg_enc_encoder_t *enc;
+    char *alias;
+#if defined(EG_ENC_ENCODER_SUBMATCH)
     eg_enc_encoder_t *submatch = NULL;
     int nmatch = 0;
+#endif
 
     for (enc = encoders; enc->name != NULL; enc++) {
         if (!strcasecmp(enc->name, name)) {
             return enc;
         }
+#if defined(EG_ENC_ENCODER_SUBMATCH)
         if (!strncasecmp(enc->name, name, strlen(name))) {
             submatch = enc;
             nmatch++;
         }
+#endif
+        for (alias = enc->aliases; alias != NULL && *alias != '\0'; alias += strlen(alias) +1) {
+            if (!strcasecmp(alias, name)) {
+                return enc;
+            }
+#if defined(EG_ENC_ENCODER_SUBMATCH)
+            if (!strncasecmp(alias, name, strlen(name))) {
+                submatch = enc;
+                nmatch++;
+            }
+#endif
+        }
     }
+#if defined(EG_ENC_ENCODER_SUBMATCH)
     if (nmatch == 1) {
         return submatch;
     }
+#endif
     fprintf(stderr, "unknown element: %s\n", name);
     fprintf(stderr, "element allowed one of the followings:\n");
     for (enc = encoders; enc->name != NULL; enc++) {

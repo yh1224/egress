@@ -657,11 +657,13 @@ static eg_enc_encoder_t eg_enc_icmpv6_ra_block_encoders[] = {
 static eg_enc_vals_t autoconfflags[] = {
     {
         .name = "MANAGED",
+        .aliases = "M\0",
         .desc = "Managed",
         .val = 0x80,
     },
     {
         .name = "OTHER",
+        .aliases = "O\0",
         .desc = "Other option",
         .val = 0x40,
     },
