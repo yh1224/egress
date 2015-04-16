@@ -780,6 +780,7 @@ static eg_enc_encoder_t eg_enc_icmpv6ndopt_field_encoders[] = {
     {
         .id = EG_ENC_ICMPV6NDOPT_LEN,
         .name = "LENGTH",
+        .aliases = "LEN\0",
         .desc = "ICMPv6 Neighbor Discovery option length",
     },
     {

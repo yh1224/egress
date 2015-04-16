@@ -55,6 +55,7 @@ static eg_enc_encoder_t eg_enc_ipv6_field_encoders[] = {
 
         .id = EG_ENC_IPV6_LENGTH,
         .name = "LENGTH",
+        .aliases = "LEN\0",
         .desc = "length (default: auto)",
     },
     {
@@ -356,11 +357,13 @@ static eg_enc_encoder_t eg_enc_ipv6ext_field_encoders[] = {
     {
         .id = EG_ENC_IPV6EXT_NEXTHEADER,
         .name = "NEXTHEADER",
+        .aliases = "NH\0",
         .desc = "next header",
     },
     {
         .id = EG_ENC_IPV6EXT_LEN,
         .name = "LENGTH",
+        .aliases = "LEN\0",
         .desc = "ipv6 extension header length",
     },
     {

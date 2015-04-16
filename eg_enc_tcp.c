@@ -42,11 +42,13 @@ static eg_enc_encoder_t eg_enc_tcp_field_encoders[] = {
     {
         .id = EG_ENC_TCP_SRCPORT,
         .name = "SRCPORT",
+        .aliases = "SRC\0",
         .desc = "source port",
     },
     {
         .id = EG_ENC_TCP_DSTPORT,
         .name = "DSTPORT",
+        .aliases = "DST\0",
         .desc = "destination port",
     },
     {
@@ -336,6 +338,7 @@ static eg_enc_encoder_t eg_enc_tcpopt_field_encoders[] = {
     {
         .id = EG_ENC_TCPOPT_LEN,
         .name = "LENGTH",
+        .aliases = "LEN\0",
         .desc = "TCP option length",
     },
     {

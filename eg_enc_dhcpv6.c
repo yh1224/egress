@@ -239,6 +239,7 @@ static eg_enc_encoder_t eg_enc_dhcpv6opt_field_encoders[] = {
     {
         .id = EG_ENC_DHCPV6OPT_LEN,
         .name = "LENGTH",
+        .aliases = "LEN\0",
         .desc = "DHCPv6 option length",
     },
     {

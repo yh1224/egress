@@ -36,16 +36,19 @@ static eg_enc_encoder_t eg_enc_udp_field_encoders[] = {
     {
         .id = EG_ENC_UDP_SRCPORT,
         .name = "SRCPORT",
+        .aliases = "SRC\0",
         .desc = "source port",
     },
     {
         .id = EG_ENC_UDP_DSTPORT,
         .name = "DSTPORT",
+        .aliases = "DST\0",
         .desc = "destination port",
     },
     {
         .id = EG_ENC_UDP_LENGTH,
         .name = "LENGTH",
+        .aliases = "LEN\0",
         .desc = "length (default: auto)",
     },
     {

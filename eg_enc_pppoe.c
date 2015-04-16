@@ -60,6 +60,7 @@ static eg_enc_encoder_t eg_enc_pppoe_field_encoders[] = {
     {
         .id = EG_ENC_PPPOE_LENGTH,
         .name = "LENGTH",
+        .aliases = "LEN\0",
         .desc = "length (default: auto)",
     },
     {

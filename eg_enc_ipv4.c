@@ -58,6 +58,7 @@ static eg_enc_encoder_t eg_enc_ipv4_field_encoders[] = {
     {
         .id = EG_ENC_IPV4_LENGTH,
         .name = "LENGTH",
+        .aliases = "LEN\0",
         .desc = "length (default: auto)",
     },
     {
@@ -417,6 +418,7 @@ static eg_enc_encoder_t eg_enc_ipv4opt_field_encoders[] = {
     {
         .id = EG_ENC_IPV4OPT_LEN,
         .name = "LENGTH",
+        .aliases = "LEN\0",
         .desc = "IPv4 option length",
     },
     {
