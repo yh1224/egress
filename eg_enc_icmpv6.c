@@ -70,6 +70,11 @@ static eg_enc_encoder_t eg_enc_icmpv6_block_encoders[] = {
         .encode = eg_enc_encode_icmpv6_na,
     },
     {
+        .name = "ND_ROUTER_SOLICIT",
+        .desc = "Router Solicit",
+        .encode = eg_enc_encode_icmpv6_rs,
+    },
+    {
         .name = "ND_ROUTER_ADVERT",
         .desc = "Router Advertisement",
         .encode = eg_enc_encode_icmpv6_ra,
@@ -578,6 +583,68 @@ static eg_buffer_t *eg_enc_encode_icmpv6_na(eg_elem_t *elems, void *lower)
             goto err;
         }
         bufn = enc->encode(elem->elems, nah);
+        if (bufn == NULL) {
+            goto err;
+        }
+        buf = eg_buffer_merge(buf, bufn, -1);
+    }
+
+    return buf;
+
+err:
+    eg_buffer_destroy(buf);
+    return NULL;
+}
+
+/**
+ * block encoder for icmpv6 router solicit
+ */
+static eg_enc_encoder_t eg_enc_icmpv6_rs_block_encoders[] = {
+    {
+        .name = "OPTION",
+        .desc = "ICMPv6 Neighbor Discovery option",
+        .encode = eg_enc_encode_icmpv6_nd_option,
+    },
+    {
+        .name = "DATA",
+        .desc = "ICMPv6 data",
+        .encode = eg_enc_encode_raw,
+    },
+    {}
+};
+
+/**
+ * encode ICMPv6 Router Solicit
+ *
+ * @param[in] elems element list to encode
+ * @param[in] lower lower protocol header
+ *
+ * @return buffer
+ */
+static eg_buffer_t *eg_enc_encode_icmpv6_rs(eg_elem_t *elems, void *lower)
+{
+    eg_buffer_t *buf, *bufn;
+    struct nd_router_solicit *rsh;
+    int hlen = sizeof(*rsh) - 4; /* excludes icmpv6 common header */
+    eg_elem_t *elem;
+    eg_enc_encoder_t *enc;
+
+    buf = eg_buffer_create(hlen);
+    if (buf == NULL) {
+        return NULL;
+    }
+    rsh = (struct nd_router_solicit *)(buf->ptr - 4);
+
+    /* encode blocks */
+    for (elem = elems; elem != NULL; elem = elem->next) {
+        if (elem->val != NULL) {
+            continue;   /* skip field */
+        }
+        enc = eg_enc_get_encoder(elem->name, eg_enc_icmpv6_rs_block_encoders);
+        if (!enc) {
+            goto err;
+        }
+        bufn = enc->encode(elem->elems, rsh);
         if (bufn == NULL) {
             goto err;
         }
