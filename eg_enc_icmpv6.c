@@ -925,11 +925,12 @@ static eg_buffer_t *eg_enc_encode_icmpv6_nd_option(eg_elem_t *elems, void *lower
     }
 
     /* fix option length */
+    datalen = ((datalen + 2 + 7) / 8) * 8; /* type + len + data  units of 8 octets */
     if (autoflags & AUTOFLAG_OPTLEN) {
-        *(buf->ptr + 1) = datalen;
+        *(buf->ptr + 1) = datalen / 8;
     }
 
-    buf->len = 2 + datalen; /* type + len + data */
+    buf->len = datalen;
 
     return buf;
 
