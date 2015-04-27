@@ -78,6 +78,7 @@ static eg_elem_val_t *make_val(int type, char *str)
 %token EQUAL
 %token LCBR
 %token RCBR
+%token CHAR
 
 %type <string> KEY KEYWORD STRING DECNUM HEXNUM MACADDR IPV4ADDR IPV6ADDR key keyword
 %type <elem> input element elements
@@ -96,6 +97,7 @@ elements
 
 element
     : key                       { $$ = make_elem($1); }
+    | key LCBR RCBR             { $$ = make_elem($1); }
     | key EQUAL value           { $$ = make_elem($1); $$->val = $3; }
     | key LCBR elements RCBR    { $$ = make_elem($1); $$->elems = $3; }
     | error                     { YYABORT; }
