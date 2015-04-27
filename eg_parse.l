@@ -55,5 +55,5 @@ HEXDIGIT    [0-9a-fA-F]
 "#"[^\n]*       /* eat up one-line comments */
 [ \t\r\n]+      /* eat up whitespace */
 
-.   { fprintf(stderr, "Unrecognized character: %s\n", yytext); }
+.   { return CHAR; }
 %%
