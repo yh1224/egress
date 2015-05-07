@@ -39,7 +39,7 @@ $(LIB) : $(LIBOBJS) $(GENOBJS)
 	$(AR) ruc $(LIB) $(LIBOBJS)
 
 $(LIBPKT) :
-	cd $(PKTTOOLSDIR) && make
+	$(MAKE) -C $(PKTTOOLSDIR)
 
 $(TARGET_EGRESS) : $(TARGET_EGRESS).o $(OBJS) $(LIB) $(LIBPKT)
 	$(CC) $(GFLAGS) -o $@ $(TARGET_EGRESS).o  $(OBJS) $(LDFLAGS)
