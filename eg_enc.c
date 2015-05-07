@@ -18,6 +18,11 @@
  */
 eg_enc_encoder_t eg_enc_encoders[] = {
     {
+        .name = "RADIOTAP",
+        .desc = "Radiotap header",
+        .encode = eg_enc_encode_radiotap,
+    },
+    {
         .name = "ETHER",
         .desc = "Ethernet frame",
         .encode = eg_enc_encode_ether,

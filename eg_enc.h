@@ -77,7 +77,9 @@ eg_enc_encoder_t *eg_enc_get_encoder(char *name, eg_enc_encoder_t *encoders);
 eg_buffer_t *eg_enc_encode(eg_elem_t *elems);
 
 /* block encoder */
+eg_buffer_t *eg_enc_encode_radiotap(struct eg_elem *, void *lower);
 eg_buffer_t *eg_enc_encode_ether(struct eg_elem *, void *lower);
+eg_buffer_t *eg_enc_encode_ieee80211(struct eg_elem *, void *lower);
 eg_buffer_t *eg_enc_encode_pppoe_session(eg_elem_t *elems, void *lower);
 eg_buffer_t *eg_enc_encode_vlan(struct eg_elem *, void *lower);
 eg_buffer_t *eg_enc_encode_arp(struct eg_elem *, void *lower);
@@ -99,9 +101,11 @@ int eg_enc_encode_hex(u_int8_t *result, eg_elem_val_t *val, int min, int max);
 int eg_enc_encode_macaddr(u_int8_t *result, eg_elem_val_t *val);
 int eg_enc_encode_ipv4addr(struct in_addr *result, eg_elem_val_t *val);
 int eg_enc_encode_ipv6addr(struct in6_addr *result, eg_elem_val_t *val);
+int eg_enc_encode_name(u_int32_t *result, eg_elem_val_t *val, eg_enc_vals_t *encname);
 int eg_enc_encode_name_uint32(u_int32_t *result, eg_elem_val_t *val, eg_enc_vals_t *encname);
 int eg_enc_encode_name_uint16(u_int16_t *result, eg_elem_val_t *val, eg_enc_vals_t *encname);
 int eg_enc_encode_name_uint8(u_int8_t *result, eg_elem_val_t *val, eg_enc_vals_t *encname);
+int eg_enc_encode_flags(u_int32_t *result, eg_elem_val_t *val, eg_enc_vals_t *encflags);
 int eg_enc_encode_flags_uint32(u_int32_t *result, eg_elem_val_t *val, eg_enc_vals_t *encflags);
 int eg_enc_encode_flags_uint16(u_int16_t *result, eg_elem_val_t *val, eg_enc_vals_t *encflags);
 int eg_enc_encode_flags_uint8(u_int8_t *result, eg_elem_val_t *val, eg_enc_vals_t *encflags);

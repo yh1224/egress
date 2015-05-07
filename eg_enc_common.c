@@ -365,7 +365,7 @@ int eg_enc_encode_ipv6addr(struct in6_addr *result, eg_elem_val_t *val)
  * @retval 0 success
  * @retval <0 fail
  */
-static int eg_enc_encode_name(u_int32_t *result, eg_elem_val_t *val, eg_enc_vals_t *encnames)
+int eg_enc_encode_name(u_int32_t *result, eg_elem_val_t *val, eg_enc_vals_t *encnames)
 {
     eg_enc_vals_t *p;
     char *alias;
@@ -488,7 +488,7 @@ int eg_enc_encode_name_uint8(u_int8_t *result, eg_elem_val_t *val, eg_enc_vals_t
  * @retval >=0 encoded length
  * @retval <0 fail
  */
-static int eg_enc_encode_flags(u_int32_t *result, eg_elem_val_t *val, eg_enc_vals_t *encflags)
+int eg_enc_encode_flags(u_int32_t *result, eg_elem_val_t *val, eg_enc_vals_t *encflags)
 {
     static char * const delim = ",";
     eg_enc_vals_t *p;
