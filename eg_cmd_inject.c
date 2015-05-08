@@ -19,9 +19,8 @@
  */
 static void usage()
 {
-    printf("usage: eg inject [-qc] [-w <usec>] -i <device>\n");
+    printf("usage: eg inject [-q] [-w <usec>] -i <device>\n");
     printf("\n");
-    printf("    -c                    auto complete sender MAC address\n");
     printf("    -q                    quiet mode\n");
     printf("    -w <usec>             sending interval\n");
     printf("    -i <device>           interface to inject\n");
@@ -79,6 +78,7 @@ int eg_inject_main(int argc, char *argv[])
     while ((c = getopt(argc, argv, "cw:t:r:i:qh?")) != -1) {
         switch (c) {
         case 'c':
+            fprintf(stderr, "warning: -c option has been deprecated.\n");
             sendflags |= PKT_SEND_FLAG_COMPLETE;
             break;
         case 'w':

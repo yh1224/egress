@@ -182,7 +182,6 @@ eg_buffer_t *eg_enc_encode_ether(eg_elem_t *elems, void *lower)
             goto err;
         }
         if (ret < 0) {
-            fprintf(stderr, "ETHER: Unexpected field: %s\n", elem->name);
             goto err;
         }
     }

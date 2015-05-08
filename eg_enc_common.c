@@ -11,7 +11,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <net/if.h>
 #include <sys/socket.h>
+#include <sys/ioctl.h>
 #include <net/ethernet.h>
 #include "eg_enc.h"
 
@@ -238,6 +240,71 @@ int eg_enc_encode_hex(u_int8_t *result, eg_elem_val_t *val, int min, int max)
 }
 
 /**
+ * encode string
+ *
+ * @param[out] result buffer to write
+ * @param[in] val encode string
+ * @param[in] min minimum octets
+ * @param[in] max maximum octets (0:unlimited)
+ *
+ * @retval >=0 encoded length
+ * @retval <0 fail
+ */
+int eg_enc_encode_string(u_int8_t *result, eg_elem_val_t *val, int min, int max)
+{
+    int ret = 0;
+
+    if (val->type == EG_TYPE_STRING) {
+        if (strlen(val->str) < min || (max > 0 && max < strlen(val->str))) {
+            fprintf(stderr, "invalid string length: %s\n", val->str);
+            return -1;
+        }
+        /* strip double quote */
+        strncpy((char *)result, val->str + 1, strlen(val->str) - 2);
+        *(result + strlen(val->str) - 2) = '\0';
+        ret = strlen(val->str) - 2;
+    } else {
+        fprintf(stderr, "invalid string: %s\n", val->str);
+        ret = -1; /* type mismatch */
+    }
+    return ret;
+}
+
+/**
+ * get mac address from interface
+ *
+ * @param[out] result result
+ * @param[in] val interface name
+ *
+ * @retval ETHER_ADDR_LEN encoded length
+ * @retval <0 fail
+ */
+int eg_enc_get_macaddr(u_int8_t *result, eg_elem_val_t *val)
+{
+    int s;
+    struct ifreq ifr;
+
+    s = socket(PF_INET, SOCK_DGRAM, 0);
+    if (s < 0) {
+        perror("socket");
+        return -1;
+    }
+
+    memset(&ifr, 0, sizeof(ifr));
+    strncpy(ifr.ifr_name, val->str, IFNAMSIZ);
+    if (ioctl(s, SIOCGIFHWADDR, &ifr) < 0) {
+        close(s);
+        fprintf(stderr, "failed to get mac address: %s\n", val->str);
+        return -1;
+    }
+    memcpy(result, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
+
+    close(s);
+
+    return ETHER_ADDR_LEN;
+}
+
+/**
  * encode mac address
  *
  * @param[out] result result
@@ -251,22 +318,22 @@ int eg_enc_encode_macaddr(u_int8_t *result, eg_elem_val_t *val)
     u_int8_t *presult;
     char *p;
     u_int8_t c;
-    int ret;
+    int ret = -1;
     int i;
 
     if (val == NULL) {
         ;
+    } else if (val->type == EG_TYPE_KEYWORD) {
+        /* get from interface */
+        ret = eg_enc_get_macaddr(result, val);
     } else if (val->type == EG_TYPE_NUMBER) {
         ret = eg_enc_encode_hex(result, val, ETHER_ADDR_LEN, ETHER_ADDR_LEN);
-        if (ret < 0) {
-            return ret;
-        }
     } else if (val->type == EG_TYPE_MACADDR) {
         presult = result;
         p = val->str;
         c = 0;
         for (i = 0; i < ETHER_ADDR_LEN; ) {
-            if (*p == ':' || *p == '\0') {
+            if (*p == ':' || *p == '-' || *p == '\0') {
                 *presult++ = c;
                 i++;
                 c = 0;
@@ -282,11 +349,11 @@ int eg_enc_encode_macaddr(u_int8_t *result, eg_elem_val_t *val)
             }
             p++;
         }
+        ret = ETHER_ADDR_LEN;
     } else {
         fprintf(stderr, "invalid mac address: %s\n", val->str);
-        return -1; /* type mismatch */
     }
-    return ETHER_ADDR_LEN;
+    return ret;
 }
 
 /**

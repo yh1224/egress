@@ -21,6 +21,7 @@ enum {
     EG_ENC_RAW_UINT16,
     EG_ENC_RAW_UINT8,
     EG_ENC_RAW_HEX,
+    EG_ENC_RAW_TEXT,
     EG_ENC_RAW_MACADDR,
     EG_ENC_RAW_IPV4ADDR,
     EG_ENC_RAW_IPV6ADDR,
@@ -49,6 +50,12 @@ static eg_enc_encoder_t eg_enc_raw_field_encoders[] = {
         .id = EG_ENC_RAW_HEX,
         .name = "HEX",
         .desc = "byte sequence",
+    },
+    {
+        .id = EG_ENC_RAW_TEXT,
+        .name = "TEXT",
+        .aliases = "STRING\0",
+        .desc = "text",
     },
     {
         .id = EG_ENC_RAW_MACADDR,
@@ -114,6 +121,9 @@ eg_buffer_t *eg_enc_encode_raw(eg_elem_t *elems, void *lower)
             break;
         case EG_ENC_RAW_HEX:
             ret = eg_enc_encode_hex(p, elem->val, 0, 0);
+            break;
+        case EG_ENC_RAW_TEXT:
+            ret = eg_enc_encode_string(p, elem->val, 0, 0);
             break;
         case EG_ENC_RAW_MACADDR:
             ret = eg_enc_encode_macaddr(p, elem->val);
