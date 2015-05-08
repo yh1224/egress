@@ -22,7 +22,7 @@
 eg_buffer_t *eg_buffer_create(int len)
 {
     eg_buffer_t *buf;
-    
+
     buf = (eg_buffer_t *)malloc(sizeof(*buf));
     if (buf == NULL) {
         fprintf(stderr, "out of memory.");
@@ -30,16 +30,14 @@ eg_buffer_t *eg_buffer_create(int len)
     }
 
     memset(buf, 0, sizeof(*buf));
-    if (len > 0) {
-        buf->size = EG_BUFFER_MAXSIZE;
-        buf->ptr = (u_int8_t *)malloc(EG_BUFFER_MAXSIZE);
-        if (buf->ptr == NULL) {
-            fprintf(stderr, "out of memory.");
-            goto err;
-        }
-        memset(buf->ptr, 0, len);
-        buf->len = len;
+    buf->size = EG_BUFFER_MAXSIZE;
+    buf->ptr = (u_int8_t *)malloc(EG_BUFFER_MAXSIZE);
+    if (buf->ptr == NULL) {
+        fprintf(stderr, "out of memory.");
+        goto err;
     }
+    memset(buf->ptr, 0, len);
+    buf->len = len;
 
     return buf;
 
