@@ -1306,11 +1306,11 @@ static eg_buffer_t *eg_enc_encode_ieee80211_reassocreq(eg_elem_t *elems, void *l
     u_int32_t num;
     int ret;
 
-    buf = eg_buffer_create(4);
+    buf = eg_buffer_create(10);
     if (buf == NULL) {
         return NULL;
     }
-    memset(buf->ptr, 0, 4);
+    memset(buf->ptr, 0, 10);
 
     /* encode fields */
     for (elem = elems; elem != NULL; elem = elem->next) {
@@ -1334,6 +1334,9 @@ static eg_buffer_t *eg_enc_encode_ieee80211_reassocreq(eg_elem_t *elems, void *l
         case EG_ENC_IEEE80211_REASSOCREQ_LI:
             ret = eg_enc_encode_num(&num, elem->val, 0, 0xffff);
             *((u_int16_t *)(buf->ptr + 2)) = htole16((u_int16_t)num);
+            break;
+        case EG_ENC_IEEE80211_REASSOCREQ_CURRENT:
+            ret = eg_enc_encode_macaddr(buf->ptr + 4, elem->val);
             break;
         default:
             goto err;
