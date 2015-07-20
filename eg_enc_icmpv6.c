@@ -269,6 +269,7 @@ eg_buffer_t *eg_enc_encode_icmpv6(eg_elem_t *elems, void *lower)
                     autoflags |= AUTOFLAG_TYPE;
                     ret = 0;
                 } else {
+                    autoflags &= ~AUTOFLAG_TYPE;
                     ret = eg_enc_encode_name_uint8(&icmp6h->icmp6_type, elem->val, icmpv6types);
                 }
             } else {
