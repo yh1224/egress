@@ -11,8 +11,12 @@
 #include <string.h>
 #include <ctype.h>
 #include <unistd.h>
-#include <net/if.h>
 #include <sys/socket.h>
+#include <net/if.h>
+#ifdef __FreeBSD__
+#include <net/if_dl.h>
+#include <ifaddrs.h>
+#endif
 #include <sys/ioctl.h>
 #include <net/ethernet.h>
 #include "eg_enc.h"
@@ -270,16 +274,8 @@ int eg_enc_encode_string(u_int8_t *result, eg_elem_val_t *val, int min, int max)
     return ret;
 }
 
-/**
- * get mac address from interface
- *
- * @param[out] result result
- * @param[in] val interface name
- *
- * @retval ETHER_ADDR_LEN encoded length
- * @retval <0 fail
- */
-int eg_enc_get_macaddr(u_int8_t *result, eg_elem_val_t *val)
+#ifdef __linux__
+static int getifaddr(u_int8_t *macaddr, char *ifname)
 {
     int s;
     struct ifreq ifr;
@@ -291,17 +287,57 @@ int eg_enc_get_macaddr(u_int8_t *result, eg_elem_val_t *val)
     }
 
     memset(&ifr, 0, sizeof(ifr));
-    strncpy(ifr.ifr_name, val->str, IFNAMSIZ);
+    strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
     if (ioctl(s, SIOCGIFHWADDR, &ifr) < 0) {
         close(s);
-        fprintf(stderr, "failed to get mac address: %s\n", val->str);
+        fprintf(stderr, "failed to get mac address: %s\n", ifname);
         return -1;
     }
-    memcpy(result, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
+    memcpy(macaddr, ifr.ifr_hwaddr.sa_data, ETHER_ADDR_LEN);
 
     close(s);
 
     return ETHER_ADDR_LEN;
+}
+#endif
+#ifdef __FreeBSD__
+static int getifaddr(u_int8_t *macaddr, char *ifname)
+{
+    struct ifaddrs *ifa, *ifa0;
+    struct sockaddr_dl *dl;
+    int ret = -1;
+
+    getifaddrs(&ifa0);
+    for (ifa = ifa0; ifa; ifa=ifa->ifa_next) {
+        dl = (struct sockaddr_dl *)ifa->ifa_addr;
+        if (strlen(ifname) == dl->sdl_nlen &&
+            strncmp(ifname, dl->sdl_data, dl->sdl_nlen) == 0) {
+            memcpy(macaddr, LLADDR(dl), ETHER_ADDR_LEN);
+            ret = ETHER_ADDR_LEN;
+            break;
+        }
+    }
+    freeifaddrs(ifa); 
+
+    if (ret < 0) {
+        fprintf(stderr, "failed to get mac address: %s\n", ifname);
+    }
+    return ret;
+}
+#endif
+
+/**
+ * get mac address from interface
+ *
+ * @param[out] result result
+ * @param[in] val interface name
+ *
+ * @retval ETHER_ADDR_LEN encoded length
+ * @retval <0 fail
+ */
+int eg_enc_get_macaddr(u_int8_t *result, eg_elem_val_t *val)
+{
+    return getifaddr(result, val->str);
 }
 
 /**
