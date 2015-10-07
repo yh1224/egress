@@ -1,90 +1,83 @@
-TARGET_RECV     = pkt-recv
-TARGET_SEND     = pkt-send
-TARGET_TXT2TXT  = pkt-txt2txt
-TARGET_TXT2PCAP = pkt-txt2pcap
-TARGET_PCAP2TXT = pkt-pcap2txt
-TARGET_ANALYZE  = pkt-analyze
-TARGET_CORRECT  = pkt-correct
-TARGET_FILTER   = pkt-filter
-TARGET_CHANGE   = pkt-change
-TARGET_PINGREP  = pkt-pingrep
+#USE_LIBPCAP = yes
+#USE_WINPCAP = yes
+#USE_NETLIB  = yes
+#USE_MINGW   = yes
 
-OBJS = argument.o bpf.o rawsock.o lib.o text.o pcap.o analyze.o correct.o \
-	filter.o change.o pingrep.o assemble.o disasm.o \
-	asm_val.o asm_field.o asm_entry.o asm_list.o
+POSTFIX = $(USE_MINGW:yes=.exe)
 
-TARGETS = \
-	$(TARGET_RECV) $(TARGET_SEND) \
-	$(TARGET_TXT2TXT) $(TARGET_TXT2PCAP) $(TARGET_PCAP2TXT) \
-	$(TARGET_ANALYZE) $(TARGET_CORRECT) $(TARGET_FILTER) $(TARGET_CHANGE) \
-	$(TARGET_PINGREP)
+TARGETS = pkt-recv pkt-send \
+	pkt-txt2txt pkt-txt2pcap pkt-pcap2txt pkt-txt2bin pkt-bin2txt \
+	pkt-analyze pkt-correct pkt-check pkt-filter pkt-change pkt-pingrep
+
+OBJS := $(TARGETS:=.o)
+
+TARGETS := $(TARGETS:=$(POSTFIX))
+
+LIBOBJS = argument.o bpf.o rawsock.o libpcap.o lib.o text.o pcap.o \
+	analyze.o correct.o check.o filter.o change.o pingrep.o \
+	assemble.o disasm.o asm_val.o asm_field.o asm_entry.o asm_list.o
+
+WINPCAPDIR = ./WpdPack
+NETLIBDIR = ./netlib
 
 LIB = libpkt.a
 
-SRCS = $(OBJS:.o=.c)
+NETLIB = $(NETLIBDIR)/lib/libnet.a
 
-PREFIX = /usr/local
-BINDIR = $(PREFIX)/bin
+LIBS = $(LIB) $(USE_NETLIB:yes=$(NETLIB))
 
-CC ?= gcc
-AR ?= ar
+SRCS = $(LIBOBJS:.o=.c)
+
+INSTALLDIR = /usr/local
+BINDIR = $(INSTALLDIR)/bin
+
+PREFIX = $(USE_MINGW:yes=mingw32-)
+
+CC = $(PREFIX)gcc
+AR = $(PREFIX)ar
 
 GFLAGS  = -O -Wall
 GFLAGS += -g
+
 CFLAGS  =
+CFLAGS += $(USE_LIBPCAP:yes=-DUSE_LIBPCAP)
+CFLAGS += $(USE_WINPCAP:yes=-DUSE_WINPCAP -I$(WINPCAPDIR)/Include)
+CFLAGS += $(USE_NETLIB:yes=-DUSE_NETLIB -I$(NETLIBDIR)/include)
+CFLAGS += $(USE_MINGW:yes=-DUSE_MINGW)
+
 LFLAGS  = -L. -lpkt
+LFLAGS += $(USE_WINPCAP:yes=-L$(WINPCAPDIR)/Lib)
+LFLAGS += $(USE_LIBPCAP:yes=-l$(USE_WINPCAP:yes=w)pcap)
+LFLAGS += $(USE_NETLIB:yes=-L$(NETLIBDIR)/lib -lnet)
+#LFLAGS += $(USE_MINGW:yes=-lwsock32 -lws2_32)
 
 .SUFFIXES:
-.SUFFIXES: .o .c
+.SUFFIXES: $(POSTFIX) .o .c
 
 all :		$(TARGETS)
 
 .c.o :
 		$(CC) $(GFLAGS) $(CFLAGS) $< -c -o $@
 
-$(LIB) :	$(OBJS)
-		$(AR) ruc $(LIB) $(OBJS)
+$(LIB) :	$(LIBOBJS)
+		$(AR) ruc $(LIB) $(LIBOBJS)
 
-$(TARGET_RECV) :	$(TARGET_RECV).o $(LIB)
-		$(CC) $(TARGET_RECV).o $(GFLAGS) $(LFLAGS) -o $@
+$(NETLIB) :
+		cd $(NETLIBDIR) ; $(MAKE) USE_MINGW=$(USE_MINGW)
 
-$(TARGET_SEND) :	$(TARGET_SEND).o $(LIB)
-		$(CC) $(TARGET_SEND).o $(GFLAGS) $(LFLAGS) -o $@
+.o$(POSTFIX) :
+		$(CC) $< $(GFLAGS) $(LFLAGS) -o $@
 
-$(TARGET_TXT2TXT) :	$(TARGET_TXT2TXT).o $(LIB)
-		$(CC) $(TARGET_TXT2TXT).o $(GFLAGS) $(LFLAGS) -o $@
-
-$(TARGET_TXT2PCAP) :	$(TARGET_TXT2PCAP).o $(LIB)
-		$(CC) $(TARGET_TXT2PCAP).o $(GFLAGS) $(LFLAGS) -o $@
-
-$(TARGET_PCAP2TXT) :	$(TARGET_PCAP2TXT).o $(LIB)
-		$(CC) $(TARGET_PCAP2TXT).o $(GFLAGS) $(LFLAGS) -o $@
-
-$(TARGET_ANALYZE) :	$(TARGET_ANALYZE).o $(LIB)
-		$(CC) $(TARGET_ANALYZE).o $(GFLAGS) $(LFLAGS) -o $@
-
-$(TARGET_CORRECT) :	$(TARGET_CORRECT).o $(LIB)
-		$(CC) $(TARGET_CORRECT).o $(GFLAGS) $(LFLAGS) -o $@
-
-$(TARGET_FILTER) :	$(TARGET_FILTER).o $(LIB)
-		$(CC) $(TARGET_FILTER).o $(GFLAGS) $(LFLAGS) -o $@
-
-$(TARGET_CHANGE) :	$(TARGET_CHANGE).o $(LIB)
-		$(CC) $(TARGET_CHANGE).o $(GFLAGS) $(LFLAGS) -o $@
-
-$(TARGET_PINGREP) :	$(TARGET_PINGREP).o $(LIB)
-		$(CC) $(TARGET_PINGREP).o $(GFLAGS) $(LFLAGS) -o $@
+$(TARGETS) :	$(OBJS) $(LIBS)
 
 install :	$(TARGETS)
 		cp $(TARGETS) $(BINDIR)
 
 uninstall :
-		cd $(BINDIR) ; rm -f $(TARGETS) 
+		cd $(BINDIR) ; rm -f $(TARGETS)
 
 clean :
-		rm -f $(OBJS) $(LIB) $(TARGETS)
-		rm -f $(TARGET_RECV).o $(TARGET_SEND).o $(TARGET_TXT2TXT).o \
-			$(TARGET_TXT2PCAP).o $(TARGET_PCAP2TXT).o \
-			$(TARGET_ANALYZE).o $(TARGET_CORRECT).o \
-			$(TARGET_FILTER).o $(TARGET_CHANGE).o \
-			$(TARGET_PINGREP).o
+		rm -f $(LIBOBJS) $(LIBS) $(OBJS) $(TARGETS)
+
+clean-netlib :
+		cd $(NETLIBDIR) ; $(MAKE) USE_MINGW=$(USE_MINGW) clean

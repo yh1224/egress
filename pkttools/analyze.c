@@ -7,6 +7,7 @@
 #include <unistd.h>
 #include <time.h>
 #include <sys/time.h>
+#ifndef USE_NETLIB
 #include <sys/socket.h>
 #include <net/ethernet.h>
 #include <net/if_arp.h>
@@ -24,9 +25,31 @@
 
 #include <netinet/ip6.h>
 #include <netinet/icmp6.h>
+#endif
+
+#include "defines.h"
+#ifdef USE_NETLIB
+#include <netlib.h>
+#endif
 
 #include "analyze.h"
 #include "lib.h"
+
+struct pseudo_header {
+  in_addr_t saddr;
+  in_addr_t daddr;
+  pkt_uint8 zero;
+  pkt_uint8 protocol;
+  pkt_uint16 len;
+};
+
+struct pseudo6_header {
+  struct in6_addr saddr;
+  struct in6_addr daddr;
+  pkt_uint32 len;
+  pkt_uint8 zero[3];
+  pkt_uint8 nexthdr;
+};
 
 static int analyze_arp(FILE *fp, char *buffer, int size)
 {
@@ -92,6 +115,7 @@ static int analyze_icmp(FILE *fp, char *buffer, int size, int total_size)
   char *p = buffer;
   int s, r = 0;
   struct icmp *icmphdr;
+  int chksum, origsum;
 
   if (size < sizeof(*icmphdr))
     return -1;
@@ -101,7 +125,22 @@ static int analyze_icmp(FILE *fp, char *buffer, int size, int total_size)
   fprintf(fp, "\ttotal size\t: %d bytes\n", total_size);
   fprintf(fp, "\ttype/code\t: %d / %d\n",
 	  icmphdr->icmp_type, icmphdr->icmp_code);
-  fprintf(fp, "\tchecksum\t: 0x%04x\n", ntohs(icmphdr->icmp_cksum));
+  fprintf(fp, "\tchecksum\t: 0x%04x", ntohs(icmphdr->icmp_cksum));
+
+  if (size < total_size) {
+    fprintf(fp, " (Uncheck)\n");
+  } else {
+    origsum = icmphdr->icmp_cksum;
+    /* This is compatible with FreeBSD */
+    icmphdr->icmp_cksum = 0;
+    chksum = ~ip_checksum(icmphdr, total_size) & 0xffff;
+    if (origsum == chksum) {
+      fprintf(fp, " (Valid)\n");
+    } else {
+      fprintf(fp, " (0x%04x)\n", ntohs(chksum));
+    }
+    icmphdr->icmp_cksum = origsum;
+  }
 
   s = sizeof(*icmphdr);
   p += s;
@@ -123,6 +162,7 @@ static int analyze_igmp(FILE *fp, char *buffer, int size, int total_size)
   char *p = buffer;
   int s, r = 0;
   struct igmp *igmphdr;
+  int chksum, origsum;
 
   if (size < sizeof(*igmphdr))
     return -1;
@@ -132,7 +172,23 @@ static int analyze_igmp(FILE *fp, char *buffer, int size, int total_size)
   fprintf(fp, "\ttotal size\t: %d bytes\n", total_size);
   fprintf(fp, "\ttype/code\t: %d / %d\n",
 	  igmphdr->igmp_type, igmphdr->igmp_code);
-  fprintf(fp, "\tchecksum\t: 0x%04x\n", ntohs(igmphdr->igmp_cksum));
+  fprintf(fp, "\tchecksum\t: 0x%04x", ntohs(igmphdr->igmp_cksum));
+
+  if (size < total_size) {
+    fprintf(fp, " (Uncheck)\n");
+  } else {
+    origsum = igmphdr->igmp_cksum;
+    /* This is compatible with FreeBSD */
+    igmphdr->igmp_cksum = 0;
+    chksum = ~ip_checksum(igmphdr, sizeof(struct igmp)) & 0xffff;
+    if (origsum == chksum) {
+      fprintf(fp, " (Valid)\n");
+    } else {
+      fprintf(fp, " (0x%04x)\n", ntohs(chksum));
+    }
+    igmphdr->igmp_cksum = origsum;
+  }
+
   fprintf(fp, "\tgroup\t\t: %s\n", inet_ntoa(igmphdr->igmp_group));
 
   s = sizeof(*igmphdr);
@@ -150,11 +206,12 @@ static int analyze_igmp(FILE *fp, char *buffer, int size, int total_size)
   return r;
 }
 
-static int analyze_tcp(FILE *fp, char *buffer, int size, int total_size)
+static int analyze_tcp(FILE *fp, char *buffer, int size, int total_size, int pchksum)
 {
   char *p = buffer;
   int s, r = 0;
   struct tcphdr *tcphdr;
+  int chksum, origsum;
 
   if (size < sizeof(*tcphdr))
     return -1;
@@ -168,8 +225,24 @@ static int analyze_tcp(FILE *fp, char *buffer, int size, int total_size)
 	  ntohl(tcphdr->th_seq), ntohl(tcphdr->th_ack));
   fprintf(fp, "\toffset/window\t: %d / %d\n",
 	  (tcphdr->th_off << 2), ntohs(tcphdr->th_win));
-  fprintf(fp, "\tchecksum/flags\t: 0x%04x / ", ntohs(tcphdr->th_sum));
-  fprintf(fp, "0x%02x ( ", tcphdr->th_flags);
+  fprintf(fp, "\tchecksum/flags\t: 0x%04x", ntohs(tcphdr->th_sum));
+
+  if (size < total_size) {
+    fprintf(fp, " (Uncheck)");
+  } else {
+    origsum = tcphdr->th_sum;
+    /* This is compatible with FreeBSD */
+    tcphdr->th_sum = pchksum; /* Unneed htons() */
+    chksum = ~ip_checksum(tcphdr, total_size) & 0xffff;
+    if (origsum == chksum) {
+      fprintf(fp, " (Valid)");
+    } else {
+      fprintf(fp, " (0x%04x)", ntohs(chksum));
+    }
+    tcphdr->th_sum = origsum;
+  }
+
+  fprintf(fp, " / 0x%02x ( ", tcphdr->th_flags);
   if (tcphdr->th_flags & TH_FIN ) fprintf(fp, "FIN ");
   if (tcphdr->th_flags & TH_SYN ) fprintf(fp, "SYN ");
   if (tcphdr->th_flags & TH_RST ) fprintf(fp, "RST ");
@@ -193,11 +266,12 @@ static int analyze_tcp(FILE *fp, char *buffer, int size, int total_size)
   return r;
 }
 
-static int analyze_udp(FILE *fp, char *buffer, int size, int total_size)
+static int analyze_udp(FILE *fp, char *buffer, int size, int total_size, int pchksum)
 {
   char *p = buffer;
   int s, r = 0;
   struct udphdr *udphdr;
+  int chksum, origsum;
 
   if (size < sizeof(*udphdr))
     return -1;
@@ -207,8 +281,23 @@ static int analyze_udp(FILE *fp, char *buffer, int size, int total_size)
   fprintf(fp, "\ttotal size\t: %d bytes\n", total_size);
   fprintf(fp, "\tsrc/dst port\t: %d / %d\n",
 	  ntohs(udphdr->uh_sport), ntohs(udphdr->uh_dport));
-  fprintf(fp, "\tlength/checksum\t: %d / 0x%04x\n",
+  fprintf(fp, "\tlength/checksum\t: %d / 0x%04x",
 	  ntohs(udphdr->uh_ulen), ntohs(udphdr->uh_sum));
+
+  if (size < total_size) {
+    fprintf(fp, " (Uncheck)\n");
+  } else {
+    origsum = udphdr->uh_sum;
+    /* This is compatible with FreeBSD */
+    udphdr->uh_sum = pchksum; /* Unneed htons() */
+    chksum = ~ip_checksum(udphdr, total_size) & 0xffff;
+    if (origsum == chksum) {
+      fprintf(fp, " (Valid)\n");
+    } else {
+      fprintf(fp, " (0x%04x)\n", ntohs(chksum));
+    }
+    udphdr->uh_sum = origsum;
+  }
 
   s = sizeof(*udphdr);
   p += s;
@@ -233,6 +322,8 @@ static int analyze_ip(FILE *fp, char *buffer, int size)
   int s, r = 0;
   struct ip *iphdr;
   int hdrsize, paysize;
+  struct pseudo_header phdr;
+  int pchksum, chksum, origsum;
 
   pktbuf = pkt_alloc_buffer(pktbuf, &bufsize, size);
 
@@ -251,19 +342,42 @@ static int analyze_ip(FILE *fp, char *buffer, int size)
   fprintf(fp, "\tID/fragment\t: 0x%04x / 0x%04x\n",
 	  ntohs(iphdr->ip_id), ntohs(iphdr->ip_off));
   fprintf(fp, "\tTTL/protocol\t: %d / %d\n", iphdr->ip_ttl, iphdr->ip_p);
-  fprintf(fp, "\tchecksum\t: 0x%04x\n", ntohs(iphdr->ip_sum));
+  fprintf(fp, "\tchecksum\t: 0x%04x", ntohs(iphdr->ip_sum));
+
+  if (size < hdrsize) {
+    fprintf(fp, " (Uncheck)\n");
+  } else {
+    origsum = iphdr->ip_sum;
+    /* This is compatible with FreeBSD */
+    iphdr->ip_sum = 0;
+    chksum = ~ip_checksum(iphdr, hdrsize) & 0xffff;
+    if (origsum == chksum) {
+      fprintf(fp, " (Valid)\n");
+    } else {
+      fprintf(fp, " (0x%04x)\n", ntohs(chksum));
+    }
+    iphdr->ip_sum = origsum;
+  }
+
   fprintf(fp, "\tsrc/dst addr\t: %s / ", inet_ntoa(iphdr->ip_src));
   fprintf(fp, "%s\n", inet_ntoa(iphdr->ip_dst));
 
   p = pktbuf + hdrsize;
   s = size   - hdrsize;
 
+  memset(&phdr, 0, sizeof(phdr));
+  phdr.saddr = iphdr->ip_src.s_addr;
+  phdr.daddr = iphdr->ip_dst.s_addr;
+  phdr.protocol = iphdr->ip_p;
+  phdr.len = htons(paysize);
+  pchksum = ip_checksum(&phdr, sizeof(phdr));
+
   if ((ntohs(iphdr->ip_off) & (IP_MF|IP_OFFMASK)) == 0) {
     switch (iphdr->ip_p) {
     case IPPROTO_ICMP: r = analyze_icmp(fp, p, s, paysize); break;
     case IPPROTO_IGMP: r = analyze_igmp(fp, p, s, paysize); break;
-    case IPPROTO_TCP:  r = analyze_tcp( fp, p, s, paysize); break;
-    case IPPROTO_UDP:  r = analyze_udp( fp, p, s, paysize); break;
+    case IPPROTO_TCP:  r = analyze_tcp( fp, p, s, paysize, pchksum); break;
+    case IPPROTO_UDP:  r = analyze_udp( fp, p, s, paysize, pchksum); break;
     default: break;
     }
   }
@@ -285,11 +399,12 @@ static int analyze_ip(FILE *fp, char *buffer, int size)
   return r;
 }
 
-static int analyze_icmp6(FILE *fp, char *buffer, int size, int total_size)
+static int analyze_icmp6(FILE *fp, char *buffer, int size, int total_size, int pchksum)
 {
   char *p = buffer;
   int s, r = 0;
   struct icmp6_hdr *icmp6hdr;
+  int chksum, origsum;
 
   if (size < sizeof(*icmp6hdr))
     return -1;
@@ -299,7 +414,22 @@ static int analyze_icmp6(FILE *fp, char *buffer, int size, int total_size)
   fprintf(fp, "\ttotal size\t: %d bytes\n", total_size);
   fprintf(fp, "\ttype/code\t: %d / %d\n",
 	  icmp6hdr->icmp6_type, icmp6hdr->icmp6_code);
-  fprintf(fp, "\tchecksum\t: 0x%04x\n", ntohs(icmp6hdr->icmp6_cksum));
+  fprintf(fp, "\tchecksum\t: 0x%04x", ntohs(icmp6hdr->icmp6_cksum));
+
+  if (size < total_size) {
+    fprintf(fp, " (Uncheck)\n");
+  } else {
+    origsum = icmp6hdr->icmp6_cksum;
+    /* This is compatible with FreeBSD */
+    icmp6hdr->icmp6_cksum = pchksum; /* Unneed htons() */
+    chksum = ~ip_checksum(icmp6hdr, total_size) & 0xffff;
+    if (origsum == chksum) {
+      fprintf(fp, " (Valid)\n");
+    } else {
+      fprintf(fp, " (0x%04x)\n", ntohs(chksum));
+    }
+    icmp6hdr->icmp6_cksum = origsum;
+  }
 
   s = sizeof(*icmp6hdr);
   p += s;
@@ -328,6 +458,8 @@ static int analyze_ip6(FILE *fp, char *buffer, int size)
   struct ip6_ext *ip6exthdr;
   struct ip6_rthdr *ip6rthdr;
   struct ip6_frag *ip6fraghdr = NULL;
+  struct pseudo6_header phdr;
+  int pchksum;
   char addrs[INET6_ADDRSTRLEN];
 
   pktbuf = pkt_alloc_buffer(pktbuf, &bufsize, size);
@@ -395,11 +527,18 @@ static int analyze_ip6(FILE *fp, char *buffer, int size)
     paysize -= exthdrsize;
   }
 
+  memset(&phdr, 0, sizeof(phdr));
+  memcpy(&phdr.saddr, &ip6hdr->ip6_src, sizeof(struct in6_addr));
+  memcpy(&phdr.daddr, &ip6hdr->ip6_dst, sizeof(struct in6_addr));
+  phdr.len = htonl(paysize);
+  phdr.nexthdr = nexthdr;
+  pchksum = ip_checksum(&phdr, sizeof(phdr));
+
   if (ip6fraghdr == NULL) {
     switch (nexthdr) {
-    case IPPROTO_ICMPV6: r = analyze_icmp6(fp, p, s, paysize); break;
-    case IPPROTO_TCP:    r = analyze_tcp(  fp, p, s, paysize); break;
-    case IPPROTO_UDP:    r = analyze_udp(  fp, p, s, paysize); break;
+    case IPPROTO_ICMPV6: r = analyze_icmp6(fp, p, s, paysize, pchksum); break;
+    case IPPROTO_TCP:    r = analyze_tcp(  fp, p, s, paysize, pchksum); break;
+    case IPPROTO_UDP:    r = analyze_udp(  fp, p, s, paysize, pchksum); break;
     default: break;
     }
   }
@@ -431,12 +570,14 @@ int pkt_analyze_ethernet(FILE *fp, char *buffer, int size, struct timeval *tm)
     pkt_uint16 proto;
   } vlantag;
   int type;
+  time_t t;
   static int count = 0;
 
   count++;
   fprintf(fp, "-- %d --\n", count);
+  t = tm->tv_sec;
   fprintf(fp, "received: %d bytes    %d.%06d %s", size,
-	  (int)tm->tv_sec, (int)tm->tv_usec, ctime(&tm->tv_sec));
+	  (int)tm->tv_sec, (int)tm->tv_usec, ctime(&t));
   if (size < ETHER_HDR_LEN)
     return -1;
   memcpy(&ehdr, buffer, ETHER_HDR_LEN);

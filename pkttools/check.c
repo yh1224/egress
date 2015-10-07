@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#ifndef USE_NETLIB
 #include <sys/socket.h>
 #include <net/ethernet.h>
 #include <net/if_arp.h>
@@ -22,6 +23,12 @@
 
 #include <netinet/ip6.h>
 #include <netinet/icmp6.h>
+#endif
+
+#include "defines.h"
+#ifdef USE_NETLIB
+#include <netlib.h>
+#endif
 
 #include "check.h"
 #include "lib.h"

@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "pkttools/defines.h"
 #include "pkttools/lib.h"
 #include "pkttools/pcap.h"
 #include "pcap.h"
@@ -71,7 +72,7 @@ int eg_inject_main(int argc, char *argv[])
     int qflag = 0;
     int c;
     FILE *in;
-    int out;
+    pktif_t out;
     int len;
     struct timeval tv;
 

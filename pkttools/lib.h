@@ -8,20 +8,14 @@
 #define PKT_SEND_FLAG_COMPLETE (1<<16)
 #define PKT_SEND_FLAG_INTERVAL (1<<17)
 
-typedef int pkt_int32;
-typedef unsigned int pkt_uint32;
-typedef short pkt_int16;
-typedef unsigned short pkt_uint16;
-typedef char pkt_int8;
-typedef unsigned char pkt_uint8;
-
 struct timeval;
 
 struct pkt_handler {
-  int (*open_recv)(char *ifname, unsigned long flags, int *bufsizep);
-  int (*open_send)(char *ifname, unsigned long flags);
-  int (*recv)(int fd, char *recvbuf, int recvsize, struct timeval *tm);
-  int (*send)(int fd, char *sendbuf, int sendsize);
+  pktif_t (*open_recv)(char *ifname, unsigned long flags, int *bufsizep);
+  pktif_t (*open_send)(char *ifname, unsigned long flags);
+  int (*recv)(pktif_t pktif, char *recvbuf, int recvsize, struct timeval *tm);
+  int (*send)(pktif_t pktif, char *sendbuf, int sendsize);
+  int (*close)(pktif_t pktif);
 };
 
 extern struct pkt_handler pkthandler;

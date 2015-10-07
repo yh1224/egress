@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "pkttools/defines.h"
 #include "pkttools/lib.h"
 #include "eg_enc.h"
 

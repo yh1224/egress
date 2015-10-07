@@ -3,6 +3,8 @@
 #include <signal.h>
 #include <sys/time.h>
 
+#include "defines.h"
+
 #include "argument.h"
 #include "asm_val.h"
 #include "asm_field.h"
@@ -25,6 +27,8 @@ static void help()
   fprintf(stderr, "\t-h\t\tOutput help of options.\n");
   fprintf(stderr, "\t-k\t\tOutput help of keys.\n");
   fprintf(stderr, "\t-b <size>\tBuffer size.\n");
+  fprintf(stderr, "\t-s <count>\tSkip count.\n");
+  fprintf(stderr, "\t-l <count>\tProcessing limit.\n");
   fprintf(stderr, "\t-r\t\tReverse filter rule.\n");
   exit(0);
 }
@@ -37,14 +41,18 @@ static void help_key()
 }
 
 static int bufsize = PKT_BUFFER_SIZE_DEFAULT;
+static int skip    = 0;
+static int limit   = 0;
 static int filrev  = ARGUMENT_FLAG_OFF;
 
 static Argument args[] = {
   { "-h", ARGUMENT_TYPE_FUNCTION, help     },
   { "-k", ARGUMENT_TYPE_FUNCTION, help_key },
-  { "-b", ARGUMENT_TYPE_INTEGER, &bufsize  },
-  { "-r", ARGUMENT_TYPE_FLAG_ON, &filrev   },
-  { NULL, ARGUMENT_TYPE_NONE   , NULL      },
+  { "-b", ARGUMENT_TYPE_INTEGER , &bufsize },
+  { "-s", ARGUMENT_TYPE_INTEGER , &skip    },
+  { "-l", ARGUMENT_TYPE_INTEGER , &limit   },
+  { "-r", ARGUMENT_TYPE_FLAG_ON , &filrev  },
+  { NULL, ARGUMENT_TYPE_NONE    , NULL     },
 };
 
 static int terminated = 0;
@@ -77,6 +85,11 @@ int main(int argc, char *argv[])
     pkt_assemble_ethernet(list, buffer, size);
     list = pkt_asm_list_destroy(list);
 
+    if (skip > 0) {
+      skip--;
+      continue;
+    }
+
     if (pkt_asm_list_filter_args(NULL, argc, argv) == 0) {
       list = pkt_asm_list_create();
       pkt_disasm_ethernet(list, buffer, size);
@@ -98,6 +111,11 @@ int main(int argc, char *argv[])
     pkt_analyze_ethernet(stdout, buffer, size, &tm);
     signal(SIGINT , SIG_DFL);
     signal(SIGTERM, SIG_DFL);
+
+    if (limit > 0) {
+      if (--limit == 0)
+	break;
+    }
   }
 
   fflush(stdout);

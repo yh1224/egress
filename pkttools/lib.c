@@ -1,17 +1,29 @@
 #include <stdio.h>
 #include <stdlib.h>
+#ifndef USE_NETLIB
 #include <netinet/in.h>
+#endif
+
+#include "defines.h"
 
 #include "bpf.h"
 #include "rawsock.h"
+#include "libpcap.h"
 #include "lib.h"
 
 struct pkt_handler pkthandler = {
+#ifdef USE_LIBPCAP
+  libpcap_open_recv, libpcap_open_send, libpcap_recv, libpcap_send,
+  libpcap_close,
+#else
 #ifdef __FreeBSD__
   bpf_open_recv, bpf_open_send, bpf_recv, bpf_send,
+  bpf_close,
 #endif
 #ifdef __linux__
   rawsock_open_recv, rawsock_open_send, rawsock_recv, rawsock_send,
+  rawsock_close,
+#endif
 #endif
 };
 
@@ -37,7 +49,7 @@ int ip_checksum(void *buffer, int size)
   for (p = buffer; size > 0; p += 2) {
     w.c[0] = p[0];
     w.c[1] = (size > 1) ? p[1] : 0;
-    sum += ntohs(w.s);
+    sum += w.s; /* Unneed ntohs() */
     size -= 2;
   }
   sum = (sum & 0xffff) + (sum >> 16);
@@ -61,6 +73,6 @@ void *pkt_alloc_buffer(void *buffer, int *sizep, int size)
 
 void error_exit(char *message)
 {
-  fprintf(stderr, message);
+  fprintf(stderr, "%s", message);
   exit(1);
 }

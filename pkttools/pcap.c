@@ -3,6 +3,8 @@
 #include <string.h>
 #include <sys/time.h>
 
+#include "defines.h"
+
 #include "pcap.h"
 #include "lib.h"
 

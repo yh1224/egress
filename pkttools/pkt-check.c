@@ -3,6 +3,8 @@
 #include <signal.h>
 #include <sys/time.h>
 
+#include "defines.h"
+
 #include "argument.h"
 #include "asm_val.h"
 #include "asm_field.h"

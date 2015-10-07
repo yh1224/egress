@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#ifndef USE_NETLIB
 #include <sys/socket.h>
 #include <net/ethernet.h>
 #include <net/if_arp.h>
@@ -13,6 +14,12 @@
 #include <arpa/inet.h>
 
 #include <netinet/ip_icmp.h>
+#endif
+
+#include "defines.h"
+#ifdef USE_NETLIB
+#include <netlib.h>
+#endif
 
 #include "pingrep.h"
 #include "lib.h"
@@ -116,9 +123,12 @@ static int pingrep_icmp(char *buffer, int size, int total_size)
 
   icmphdr->icmp_type = ICMP_ECHOREPLY;
 
+  if (size < total_size)
+    return -1;
+
   /* This is compatible with FreeBSD */
   icmphdr->icmp_cksum = 0;
-  icmphdr->icmp_cksum = htons(~ip_checksum(icmphdr, total_size));
+  icmphdr->icmp_cksum = ~ip_checksum(icmphdr, total_size); /* Unneed htons() */
 
   s = sizeof(*icmphdr);
   p += s;
@@ -176,7 +186,7 @@ static int pingrep_ip(char *buffer, int size, struct ether_header *ehdr)
 
   /* This is compatible with FreeBSD */
   iphdr->ip_sum = 0;
-  iphdr->ip_sum = htons(~ip_checksum(iphdr, hdrsize));
+  iphdr->ip_sum = ~ip_checksum(iphdr, hdrsize); /* Unneed htons() */
 
   memcpy(ehdr->ether_dhost, ehdr->ether_shost, ETHER_ADDR_LEN);
   make_srcmacaddr((char *)ehdr->ether_shost, &iphdr->ip_src);

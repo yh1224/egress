@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#ifndef USE_NETLIB
 #include <sys/socket.h>
 #include <net/ethernet.h>
 #include <net/if_arp.h>
@@ -22,6 +23,12 @@
 
 #include <netinet/ip6.h>
 #include <netinet/icmp6.h>
+#endif
+
+#include "defines.h"
+#ifdef USE_NETLIB
+#include <netlib.h>
+#endif
 
 #include "correct.h"
 #include "lib.h"
@@ -52,9 +59,12 @@ static int correct_icmp(char *buffer, int size, int total_size)
     return -1;
   icmphdr = (struct icmp *)buffer;
 
+  if (size < total_size)
+    return -1;
+
   /* This is compatible with FreeBSD */
   icmphdr->icmp_cksum = 0;
-  icmphdr->icmp_cksum = htons(~ip_checksum(icmphdr, total_size));
+  icmphdr->icmp_cksum = ~ip_checksum(icmphdr, total_size); /* Unneed htons() */
 
   s = sizeof(*icmphdr);
   p += s;
@@ -83,7 +93,7 @@ static int correct_igmp(char *buffer, int size, int total_size)
 
   /* This is compatible with FreeBSD */
   igmphdr->igmp_cksum = 0;
-  igmphdr->igmp_cksum = htons(~ip_checksum(igmphdr, sizeof(struct igmp)));
+  igmphdr->igmp_cksum = ~ip_checksum(igmphdr, sizeof(struct igmp)); /* Unneed htons() */
 
   s = sizeof(*igmphdr);
   p += s;
@@ -110,9 +120,12 @@ static int correct_tcp(char *buffer, int size, int total_size, int pchksum)
     return -1;
   tcphdr = (struct tcphdr *)buffer;
 
+  if (size < total_size)
+    return -1;
+
   /* This is compatible with FreeBSD */
-  tcphdr->th_sum = htons(pchksum);
-  tcphdr->th_sum = htons(~ip_checksum(tcphdr, total_size));
+  tcphdr->th_sum = pchksum; /* Unneed htons() */
+  tcphdr->th_sum = ~ip_checksum(tcphdr, total_size); /* Unneed htons() */
 
   s = sizeof(*tcphdr);
   p += s;
@@ -139,9 +152,12 @@ static int correct_udp(char *buffer, int size, int total_size, int pchksum)
     return -1;
   udphdr = (struct udphdr *)buffer;
 
+  if (size < total_size)
+    return -1;
+
   /* This is compatible with FreeBSD */
-  udphdr->uh_sum = htons(pchksum);
-  udphdr->uh_sum = htons(~ip_checksum(udphdr, total_size));
+  udphdr->uh_sum = pchksum; /* Unneed htons() */
+  udphdr->uh_sum = ~ip_checksum(udphdr, total_size); /* Unneed htons() */
 
   s = sizeof(*udphdr);
   p += s;
@@ -208,7 +224,7 @@ static int correct_ip(char *buffer, int size)
 
   /* This is compatible with FreeBSD */
   iphdr->ip_sum = 0;
-  iphdr->ip_sum = htons(~ip_checksum(iphdr, hdrsize));
+  iphdr->ip_sum = ~ip_checksum(iphdr, hdrsize); /* Unneed htons() */
 
   p += r;
   r = p - pktbuf;
@@ -236,9 +252,12 @@ static int correct_icmp6(char *buffer, int size, int total_size, int pchksum)
     return -1;
   icmp6hdr = (struct icmp6_hdr *)buffer;
 
+  if (size < total_size)
+    return -1;
+
   /* This is compatible with FreeBSD */
-  icmp6hdr->icmp6_cksum = htons(pchksum);
-  icmp6hdr->icmp6_cksum = htons(~ip_checksum(icmp6hdr, total_size));
+  icmp6hdr->icmp6_cksum = pchksum; /* Unneed htons() */
+  icmp6hdr->icmp6_cksum = ~ip_checksum(icmp6hdr, total_size); /* Unneed htons() */
 
   s = sizeof(*icmp6hdr);
   p += s;

@@ -2,6 +2,11 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/time.h>
+#ifdef WIN32
+#include <fcntl.h>
+#endif
+
+#include "defines.h"
 
 #include "argument.h"
 #include "asm_val.h"
@@ -19,13 +24,16 @@ static void help()
   fprintf(stderr, "pkt-pcap2txt\n");
   fprintf(stderr, "\tInput PCAP file from stdin and output to stdout.\n\n");
   fprintf(stderr, "EXAMPLE:\n");
+  fprintf(stderr, "\t$ tcpdump -i eth0 -w packet.pcap\n");
   fprintf(stderr, "\t$ cat packet.pcap | pkt-pcap2txt | pkt-send -i eth0\n");
-  fprintf(stderr, "\t$ cat packet.pcap | pkt-pcap2txt > packet.txt\n");
   fprintf(stderr, "OPTIONS:\n");
   fprintf(stderr, "\t-h\t\tOutput help of options.\n");
   fprintf(stderr, "\t-k\t\tOutput help of keys.\n");
   fprintf(stderr, "\t-b <size>\tBuffer size.\n");
+  fprintf(stderr, "\t-s <count>\tSkip count.\n");
+  fprintf(stderr, "\t-l <count>\tProcessing limit.\n");
   fprintf(stderr, "\t-r\t\tReverse filter rule.\n");
+  fprintf(stderr, "\t-n <count>\tOutput column.\n");
   fprintf(stderr, "\t-a\t\tOutput field assembly.\n");
   exit(0);
 }
@@ -38,16 +46,22 @@ static void help_key()
 }
 
 static int bufsize = PKT_BUFFER_SIZE_DEFAULT;
+static int skip    = 0;
+static int limit   = 0;
 static int filrev  = ARGUMENT_FLAG_OFF;
+static int column  = 0;
 static int asmlist = ARGUMENT_FLAG_OFF;
 
 static Argument args[] = {
   { "-h", ARGUMENT_TYPE_FUNCTION, help     },
   { "-k", ARGUMENT_TYPE_FUNCTION, help_key },
-  { "-b", ARGUMENT_TYPE_INTEGER, &bufsize  },
-  { "-r", ARGUMENT_TYPE_FLAG_ON, &filrev   },
-  { "-a", ARGUMENT_TYPE_FLAG_ON, &asmlist  },
-  { NULL, ARGUMENT_TYPE_NONE   , NULL      },
+  { "-b", ARGUMENT_TYPE_INTEGER , &bufsize },
+  { "-s", ARGUMENT_TYPE_INTEGER , &skip    },
+  { "-l", ARGUMENT_TYPE_INTEGER , &limit   },
+  { "-r", ARGUMENT_TYPE_FLAG_ON , &filrev  },
+  { "-n", ARGUMENT_TYPE_INTEGER , &column  },
+  { "-a", ARGUMENT_TYPE_FLAG_ON , &asmlist },
+  { NULL, ARGUMENT_TYPE_NONE    , NULL     },
 };
 
 static int terminated = 0;
@@ -69,12 +83,21 @@ int main(int argc, char *argv[])
   if (buffer == NULL)
     error_exit("Out of memory.\n");
 
+#ifdef WIN32
+  setmode(fileno(stdin), O_BINARY);
+#endif
+
   while (!terminated) {
     size = pkt_pcap_read(stdin, buffer, bufsize, &capsize, &origsize, &tm);
     if (size < 0)
       break;
     if (size == bufsize)
       error_exit("Out of buffer.\n");
+
+    if (skip > 0) {
+      skip--;
+      continue;
+    }
 
     if (pkt_asm_list_filter_args(NULL, argc, argv) == 0) {
       list = pkt_asm_list_create();
@@ -99,11 +122,16 @@ int main(int argc, char *argv[])
 
     signal(SIGINT , sigint_handler);
     signal(SIGTERM, sigint_handler);
-    pkt_text_write(stdout, buffer, capsize, origsize, &tm, list);
+    pkt_text_write(stdout, buffer, column, capsize, origsize, &tm, list);
     signal(SIGINT , SIG_DFL);
     signal(SIGTERM, SIG_DFL);
 
     list = pkt_asm_list_destroy(list);
+
+    if (limit > 0) {
+      if (--limit == 0)
+	break;
+    }
   }
 
   fflush(stdout);

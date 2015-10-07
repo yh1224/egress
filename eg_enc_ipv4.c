@@ -14,6 +14,7 @@
 #define __FAVOR_BSD
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include "pkttools/defines.h"
 #include "pkttools/lib.h"
 #include "eg_enc.h"
 

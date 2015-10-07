@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "defines.h"
+
 #include "asm_val.h"
 #include "asm_field.h"
 #include "asm_entry.h"

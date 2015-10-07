@@ -3,6 +3,11 @@
 #include <unistd.h>
 #include <signal.h>
 #include <sys/time.h>
+#ifdef WIN32
+#include <fcntl.h>
+#endif
+
+#include "defines.h"
 
 #include "argument.h"
 #include "asm_val.h"
@@ -71,6 +76,10 @@ int main(int argc, char *argv[])
   buffer = malloc(bufsize);
   if (buffer == NULL)
     error_exit("Out of memory.\n");
+
+#ifdef WIN32
+  setmode(fileno(stdout), O_BINARY);
+#endif
 
   while (!terminated) {
     list = pkt_asm_list_create();

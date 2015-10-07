@@ -10,6 +10,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include "pkttools/defines.h"
 #include "pkttools/lib.h"
 #include "pkttools/pcap.h"
 #include "eg_enc.h"

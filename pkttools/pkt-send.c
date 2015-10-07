@@ -4,6 +4,11 @@
 #include <signal.h>
 #include <sys/time.h>
 
+#include "defines.h"
+#ifdef USE_NETLIB
+#include <netlib.h>
+#endif
+
 #include "argument.h"
 #include "asm_val.h"
 #include "asm_field.h"
@@ -25,6 +30,8 @@ static void help()
   fprintf(stderr, "\t-h\t\tOutput help of options.\n");
   fprintf(stderr, "\t-k\t\tOutput help of keys.\n");
   fprintf(stderr, "\t-b <size>\tBuffer size.\n");
+  fprintf(stderr, "\t-s <count>\tSkip count.\n");
+  fprintf(stderr, "\t-l <count>\tProcessing limit.\n");
   fprintf(stderr, "\t-r\t\tReverse filter rule.\n");
   fprintf(stderr, "\t-i <interface>\tNetwork interface.\n");
   fprintf(stderr, "\t-w <usec>\tSending interval.\n");
@@ -43,6 +50,8 @@ static void help_key()
 
 static char *ifname   = NULL;
 static int bufsize    = PKT_BUFFER_SIZE_DEFAULT;
+static int skip       = 0;
+static int limit      = 0;
 static int filrev     = ARGUMENT_FLAG_OFF;
 static int waitusec   = 0;
 static int complete   = ARGUMENT_FLAG_OFF;
@@ -53,6 +62,8 @@ static Argument args[] = {
   { "-h", ARGUMENT_TYPE_FUNCTION, help        },
   { "-k", ARGUMENT_TYPE_FUNCTION, help_key    },
   { "-b", ARGUMENT_TYPE_INTEGER , &bufsize    },
+  { "-s", ARGUMENT_TYPE_INTEGER , &skip       },
+  { "-l", ARGUMENT_TYPE_INTEGER , &limit      },
   { "-r", ARGUMENT_TYPE_FLAG_ON , &filrev     },
   { "-i", ARGUMENT_TYPE_STRING  , &ifname     },
   { "-w", ARGUMENT_TYPE_INTEGER , &waitusec   },
@@ -95,20 +106,23 @@ static void sigint_handler(int value)
 
 int main(int argc, char *argv[])
 {
+  pktif_t pktif;
   unsigned long flags = 0;
-  int fd, size, r;
+  int size, r;
   char *buffer;
   struct timeval starttime, firsttime, nowtime, tm, t0, t1;
   pkt_asm_list_t list;
   int first = 1;
 
   argument_read(&argc, argv, args);
+#ifndef USE_WINPCAP
   if (ifname == NULL)
     error_exit("Unknown interface.\n");
+#endif
   if (complete) flags |= PKT_SEND_FLAG_COMPLETE;
   if (interval) flags |= PKT_SEND_FLAG_INTERVAL;
 
-  fd = pkthandler.open_send(ifname, flags);
+  pktif = pkthandler.open_send(ifname, flags);
 
   buffer = malloc(bufsize);
   if (buffer == NULL)
@@ -124,6 +138,11 @@ int main(int argc, char *argv[])
 
     pkt_assemble_ethernet(list, buffer, size);
     list = pkt_asm_list_destroy(list);
+
+    if (skip > 0) {
+      skip--;
+      continue;
+    }
 
     if (pkt_asm_list_filter_args(NULL, argc, argv) == 0) {
       list = pkt_asm_list_create();
@@ -164,9 +183,14 @@ int main(int argc, char *argv[])
 
     signal(SIGINT , sigint_handler);
     signal(SIGTERM, sigint_handler);
-    pkthandler.send(fd, buffer, size);
+    pkthandler.send(pktif, buffer, size);
     signal(SIGINT , SIG_DFL);
     signal(SIGTERM, SIG_DFL);
+
+    if (limit > 0) {
+      if (--limit == 0)
+	break;
+    }
 
     if (waitusec > 0)
       usleep(waitusec);
@@ -174,7 +198,7 @@ int main(int argc, char *argv[])
 
   free(buffer);
 
-  close(fd);
+  pkthandler.close(pktif);
 
   return 0;
 }

@@ -5,7 +5,7 @@ struct timeval;
 int pkt_text_read(FILE *fp, char *buffer, int size,
 		  int *capsizep, int *origsizep, struct timeval *tp,
 		  pkt_asm_list_t list);
-int pkt_text_write(FILE *fp, char *buffer,
+int pkt_text_write(FILE *fp, char *buffer, int column,
 		   int capsize, int origsize, struct timeval *tp,
 		   pkt_asm_list_t list);
 

@@ -2,8 +2,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#ifndef USE_NETLIB
 #include <net/ethernet.h>
 #include <netinet/in.h>
+#endif
+
+#include "defines.h"
+#ifdef USE_NETLIB
+#include <netlib.h>
+#endif
 
 #include "asm_val.h"
 #include "lib.h"

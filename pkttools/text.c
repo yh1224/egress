@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <time.h>
 #include <sys/time.h>
+#ifndef USE_NETLIB
 #include <sys/socket.h>
 #include <net/ethernet.h>
 #include <netinet/in.h>
@@ -11,6 +12,12 @@
 #include <netinet/ether.h>
 #endif
 #include <arpa/inet.h>
+#endif
+
+#include "defines.h"
+#ifdef USE_NETLIB
+#include <netlib.h>
+#endif
 
 #include "asm_val.h"
 #include "asm_field.h"
@@ -19,7 +26,7 @@
 #include "text.h"
 #include "lib.h"
 
-#define COLUMN 16
+#define DEFAULT_COLUMN 16
 
 static int isterminator(int c)
 {
@@ -152,7 +159,7 @@ int pkt_text_read(FILE *fp, char *buffer, int size,
   pkt_asm_field_t field;
 
   capsize = origsize = -1;
-  t.tv_sec = t.tv_usec = 0;
+  gettimeofday(&t, NULL);
 
   while (1) {
     c = getkey(fp, inbuf, sizeof(inbuf));
@@ -282,16 +289,22 @@ int pkt_text_read(FILE *fp, char *buffer, int size,
   return capsize;
 }
 
-int pkt_text_write(FILE *fp, char *buffer,
+int pkt_text_write(FILE *fp, char *buffer, int column,
 		   int capsize, int origsize, struct timeval *tp,
 		   pkt_asm_list_t list)
 {
-  char text[COLUMN * 2];
+  static char *text = NULL;
+  static int textsize = 0;
   char *textp = NULL;
   unsigned char c;
   struct timeval zero;
-  int i, size;
+  int i, n = 0, size;
+  time_t t;
   static int count = 0;
+
+  if (column < 1)
+    column = DEFAULT_COLUMN;
+  text = pkt_alloc_buffer(text, &textsize, column * 2 + 1);
 
   if (origsize < 0)
     origsize = capsize;
@@ -302,18 +315,20 @@ int pkt_text_write(FILE *fp, char *buffer,
 
   count++;
   fprintf(fp, "-- %d --\n", count);
+  t = tp->tv_sec;
   fprintf(fp, "TIME: %d.%06d %s",
-	  (int)tp->tv_sec, (int)tp->tv_usec, ctime(&tp->tv_sec));
+	  (int)tp->tv_sec, (int)tp->tv_usec, ctime(&t));
   fprintf(fp, "SIZE: %d/%d\n", capsize, origsize);
 
-  size = ((capsize + COLUMN - 1) / COLUMN) * COLUMN;
+  size = ((capsize + column - 1) / column) * column;
   for (i = 0; i < size; i++) {
-    if ((i % COLUMN) == 0) {
+    if ((i % column) == 0) {
+      n = 0;
       textp = text;
       fprintf(fp, "%06X:", i);
     }
 
-    if ((i % 4) == 0)
+    if ((n % 4) == 0)
       fprintf(fp, " ");
 
     if (i < capsize) {
@@ -324,12 +339,14 @@ int pkt_text_write(FILE *fp, char *buffer,
       fprintf(fp, "   ");
     }
 
-    if ((i % 8) == 0) *(textp++) = ' ';
+    if ((n % 8) == 0) *(textp++) = ' ';
     *(textp++) = isprint(c) ? c : '.';
     *textp = '\0';
 
-    if ((i % COLUMN) == (COLUMN - 1))
+    if ((i % column) == (column - 1))
       fprintf(fp, ":%s\n", text);
+
+    n++;
   }
 
   pkt_asm_list_write(list, fp);

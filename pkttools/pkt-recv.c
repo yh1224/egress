@@ -4,6 +4,8 @@
 #include <signal.h>
 #include <sys/time.h>
 
+#include "defines.h"
+
 #include "argument.h"
 #include "asm_val.h"
 #include "asm_field.h"
@@ -25,10 +27,12 @@ static void help()
   fprintf(stderr, "\t-h\t\tOutput help of options.\n");
   fprintf(stderr, "\t-k\t\tOutput help of keys.\n");
   fprintf(stderr, "\t-b <size>\tBuffer size.\n");
+  fprintf(stderr, "\t-s <count>\tSkip count.\n");
+  fprintf(stderr, "\t-l <count>\tProcessing limit.\n");
   fprintf(stderr, "\t-r\t\tReverse filter rule.\n");
+  fprintf(stderr, "\t-n <count>\tOutput column.\n");
   fprintf(stderr, "\t-a\t\tOutput field assembly.\n");
   fprintf(stderr, "\t-i <interface>\tNetwork interface.\n");
-  fprintf(stderr, "\t-l <count>\tReceive limit.\n");
   fprintf(stderr, "\t-np\t\tNot promiscuous mode.\n");
   fprintf(stderr, "\t-ro\t\tNot receive outgoing packet.\n");
   exit(0);
@@ -43,9 +47,11 @@ static void help_key()
 
 static char *ifname = NULL;
 static int bufsize  = 0;
-static int filrev   = ARGUMENT_FLAG_OFF;
-static int asmlist  = ARGUMENT_FLAG_OFF;
+static int skip     = 0;
 static int limit    = 0;
+static int filrev   = ARGUMENT_FLAG_OFF;
+static int column   = 0;
+static int asmlist  = ARGUMENT_FLAG_OFF;
 static int promisc  = ARGUMENT_FLAG_ON;
 static int recvonly = ARGUMENT_FLAG_OFF;
 
@@ -53,10 +59,12 @@ static Argument args[] = {
   { "-h" , ARGUMENT_TYPE_FUNCTION, help      },
   { "-k" , ARGUMENT_TYPE_FUNCTION, help_key  },
   { "-b" , ARGUMENT_TYPE_INTEGER , &bufsize  },
+  { "-s" , ARGUMENT_TYPE_INTEGER , &skip     },
+  { "-l" , ARGUMENT_TYPE_INTEGER , &limit    },
   { "-r" , ARGUMENT_TYPE_FLAG_ON , &filrev   },
+  { "-n" , ARGUMENT_TYPE_INTEGER , &column   },
   { "-a" , ARGUMENT_TYPE_FLAG_ON , &asmlist  },
   { "-i" , ARGUMENT_TYPE_STRING  , &ifname   },
-  { "-l" , ARGUMENT_TYPE_INTEGER , &limit    },
   { "-np", ARGUMENT_TYPE_FLAG_OFF, &promisc  },
   { "-ro", ARGUMENT_TYPE_FLAG_ON , &recvonly },
   { NULL , ARGUMENT_TYPE_NONE    , NULL      },
@@ -70,30 +78,38 @@ static void sigint_handler(int value)
 
 int main(int argc, char *argv[])
 {
+  pktif_t pktif;
   unsigned long flags = 0;
-  int fd, size, r;
+  int size, r;
   char *buffer;
   struct timeval tm;
   pkt_asm_list_t list;
 
   argument_read(&argc, argv, args);
+#ifndef USE_WINPCAP
   if (ifname == NULL)
     error_exit("Unknown interface.\n");
+#endif
   if (promisc ) flags |= PKT_RECV_FLAG_PROMISC;
   if (recvonly) flags |= PKT_RECV_FLAG_RECVONLY;
 
-  fd = pkthandler.open_recv(ifname, flags, bufsize ? NULL : &bufsize);
+  pktif = pkthandler.open_recv(ifname, flags, bufsize ? NULL : &bufsize);
 
   buffer = malloc(bufsize);
   if (buffer == NULL)
     error_exit("Out of memory.\n");
 
   while (!terminated) {
-    size = pkthandler.recv(fd, buffer, bufsize, &tm);
+    size = pkthandler.recv(pktif, buffer, bufsize, &tm);
     if (size < 0)
       break;
     if (size == bufsize)
       error_exit("Out of buffer.\n");
+
+    if (skip > 0) {
+      skip--;
+      continue;
+    }
 
     if (pkt_asm_list_filter_args(NULL, argc, argv) == 0) {
       list = pkt_asm_list_create();
@@ -118,7 +134,7 @@ int main(int argc, char *argv[])
 
     signal(SIGINT , sigint_handler);
     signal(SIGTERM, sigint_handler);
-    pkt_text_write(stdout, buffer, size, size, &tm, list);
+    pkt_text_write(stdout, buffer, column, size, size, &tm, list);
     signal(SIGINT , SIG_DFL);
     signal(SIGTERM, SIG_DFL);
 
@@ -133,7 +149,7 @@ int main(int argc, char *argv[])
   fflush(stdout);
   free(buffer);
 
-  close(fd);
+  pkthandler.close(pktif);
 
   return 0;
 }

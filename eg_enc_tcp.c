@@ -16,6 +16,7 @@
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
 #include <netinet/tcp.h>
+#include "pkttools/defines.h"
 #include "pkttools/lib.h"
 #include "eg_enc.h"
 
